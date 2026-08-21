@@ -28,8 +28,8 @@ export default function GltfUploadButton() {
           gltf.scene.traverse((o) => {
             if ((o as { isMesh?: boolean }).isMesh) meshCount++;
           });
-          useCadStore.getState().setGltf(gltf.scene, file.name);
-          useViewerStore.getState().viewer?.fitView();
+          useCadStore.getState().setGltf(gltf.scene, file.name, { pending: true });
+          useViewerStore.getState().viewer3d?.fitView();
           message.success(`已加载 ${file.name}（网格 ${meshCount} 个）`);
         },
         (err) => {

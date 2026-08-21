@@ -1,11 +1,40 @@
 import { useEffect, useRef } from 'react';
 import { MockChatStreamClient } from '../sse/MockChatStreamClient';
-import type { ChatStreamClient } from '../sse/types';
+import type { ChatAttachment, ChatStreamClient } from '../sse/types';
 import { useCadStore } from '../stores/cadStore';
 import { useChatStore } from '../stores/chatStore';
 
 /** 流式客户端单例。后续接入真实后端时替换为 HttpChatStreamClient 实例即可。 */
 const client: ChatStreamClient = new MockChatStreamClient();
+
+function createAttachmentId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  return `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** 从 cadStore 收集当前输入区待发送附件，写入消息卡片 */
+function collectPendingAttachments(): ChatAttachment[] {
+  const cad = useCadStore.getState();
+  const list: ChatAttachment[] = [];
+  if (cad.pendingJson && cad.model) {
+    list.push({
+      id: createAttachmentId(),
+      name: cad.pendingJson,
+      kind: 'json',
+      model: cad.model,
+    });
+  }
+  if (cad.pendingGltf) {
+    list.push({
+      id: createAttachmentId(),
+      name: cad.pendingGltf,
+      kind: 'glb',
+    });
+  }
+  return list;
+}
 
 /**
  * 发送消息并驱动流式输出：
@@ -21,9 +50,18 @@ export function useSendMessage() {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    const result = useChatStore.getState().sendMessage(trimmed);
+    const attachments = collectPendingAttachments();
+    const result = useChatStore.getState().sendMessage(trimmed, attachments);
     if (!result) return;
     const { sessionId, assistantMessageId } = result;
+
+    const cad = useCadStore.getState();
+    cad.consumePendingAttachments();
+
+    // 首次发消息且已有模型时再打开右侧画布（上传本身不弹出）
+    if (!cad.canvasOpen && (cad.model || cad.gltfScene)) {
+      useCadStore.getState().openCanvas();
+    }
 
     const controller = new AbortController();
     abortRef.current?.abort();

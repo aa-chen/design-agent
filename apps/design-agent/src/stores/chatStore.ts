@@ -31,7 +31,10 @@ interface ChatState {
    * 追加用户消息与空 assistant 占位消息，返回占位消息 id 供流式写入。
    * 若当前会话正在流式输出则返回 null。
    */
-  sendMessage: (text: string) => { sessionId: string; assistantMessageId: string } | null;
+  sendMessage: (
+    text: string,
+    attachments?: ChatMessage['attachments'],
+  ) => { sessionId: string; assistantMessageId: string } | null;
   appendDelta: (sessionId: string, messageId: string, delta: string) => void;
   finishMessage: (sessionId: string, messageId: string) => void;
   markMessageError: (sessionId: string, messageId: string, error: string) => void;
@@ -72,7 +75,7 @@ export const useChatStore = create<ChatState>()(
           };
         }),
 
-      sendMessage: (text) => {
+      sendMessage: (text, attachments) => {
         const state = get();
         let sessionId = state.activeSessionId;
         if (!sessionId) {
@@ -91,6 +94,7 @@ export const useChatStore = create<ChatState>()(
           role: 'user',
           content: text,
           createdAt: now,
+          ...(attachments && attachments.length > 0 ? { attachments } : {}),
         };
         const assistantMessageId = createId();
         const assistantMsg: ChatMessage = {

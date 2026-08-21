@@ -3,14 +3,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RenderingViewer } from './RenderingViewer';
 import { disposeObjectGroup } from './threeUtils';
 
+/** 原点坐标轴基准长度（世界单位），fitView 时按模型尺寸缩放 */
+const AXIS_SIZE = 150;
+
 /**
  * 3D 渲染器：GLTF/GLB 模型。
- * 透视相机 + 轨道控制（旋转/平移/缩放）+ 光照；2D CAD 渲染见 Cad2DViewer。
+ * 透视相机 + 轨道控制（旋转/平移/缩放）+ 光照 + 原点坐标轴；2D CAD 渲染见 Cad2DViewer。
  * 命令式生命周期，由 React 组件挂载/销毁。
  */
 export class Cad3DViewer extends RenderingViewer {
   private readonly camera: THREE.PerspectiveCamera;
   private readonly orbitControls: OrbitControls;
+  private readonly axes: THREE.AxesHelper;
 
   private gltfGroup: THREE.Group | null = null;
 
@@ -33,7 +37,10 @@ export class Cad3DViewer extends RenderingViewer {
     dir.position.set(200, 300, 400);
     this.scene.add(dir);
 
-    this.addGrid();
+    // 原点坐标轴（红 X / 绿 Y / 蓝 Z）
+    this.axes = new THREE.AxesHelper(AXIS_SIZE);
+    this.scene.add(this.axes);
+
     this.requestRender();
     this.loop();
   }
@@ -41,16 +48,6 @@ export class Cad3DViewer extends RenderingViewer {
   protected updateCameraForSize(w: number, h: number) {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-  }
-
-  private addGrid() {
-    // 与 2D 底图一致的 XY 平面网格（3D 视角下仍可见，保持旧行为）
-    const grid = new THREE.GridHelper(2000, 40, 0x0f172a, 0x0f172a);
-    grid.rotation.x = Math.PI / 2;
-    const mat = grid.material as THREE.Material;
-    mat.opacity = 0.1;
-    mat.transparent = true;
-    this.scene.add(grid);
   }
 
   /** 加载 GLTF/GLB 3D 模型并展示（透视相机 + 轨道控制） */
@@ -61,7 +58,7 @@ export class Cad3DViewer extends RenderingViewer {
     this.requestRender();
   }
 
-  /** 清空场景中的 3D 模型对象（网格底图保留） */
+  /** 清空场景中的 3D 模型对象（原点坐标轴保留） */
   clearModel() {
     if (this.gltfGroup) {
       this.scene.remove(this.gltfGroup);
@@ -85,12 +82,16 @@ export class Cad3DViewer extends RenderingViewer {
       .addScaledVector(new THREE.Vector3(1, 0.7, 1).normalize(), dist);
     this.orbitControls.target.copy(center);
     this.orbitControls.update();
+    // 坐标轴长度约为包围球半径的 0.8 倍（随模型尺寸缩放）
+    this.axes.scale.setScalar(((sphere.radius * 0.8) / AXIS_SIZE) || 1);
     this.requestRender();
   }
 
   override dispose() {
     this.clearModel();
     this.orbitControls.dispose();
+    this.scene.remove(this.axes);
+    disposeObjectGroup(this.axes);
     super.dispose();
   }
 }

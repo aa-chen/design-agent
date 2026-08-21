@@ -2,9 +2,11 @@ import { SendOutlined } from '@ant-design/icons';
 import { Button, TextArea } from '@da/ui';
 import type { TextAreaRef } from '@da/ui';
 import { useEffect, useRef, useState } from 'react';
+import { useCadStore } from '../stores/cadStore';
 import { useChatStore } from '../stores/chatStore';
 import GltfUploadButton from '../upload/GltfUploadButton';
 import JsonUploadButton from '../upload/JsonUploadButton';
+import { AttachmentChip } from './AttachmentChip';
 import { useSendMessage } from './useChatStream';
 
 /**
@@ -25,10 +27,15 @@ export function ChatInput({
   const streaming = useChatStore((s) =>
     s.activeSessionId ? s.assistantStatus[s.activeSessionId] === 'streaming' : false,
   );
+  const pendingJson = useCadStore((s) => s.pendingJson);
+  const pendingGltf = useCadStore((s) => s.pendingGltf);
+  const clearPendingJson = useCadStore((s) => s.clearPendingJson);
+  const clearPendingGltf = useCadStore((s) => s.clearPendingGltf);
   const textareaRef = useRef<TextAreaRef>(null);
   const blockRef = useRef<HTMLDivElement>(null);
+  const hasPending = !!(pendingJson || pendingGltf);
 
-  // 监听输入卡片高度（textarea 自动增高时更新），通知父组件调整消息列表底部占位
+  // 监听输入卡片高度（textarea 自动增高 / 附件芯片增减时更新），通知父组件调整消息列表底部占位
   useEffect(() => {
     const el = blockRef.current;
     if (!el || !onHeightChange) return;
@@ -74,22 +81,42 @@ export function ChatInput({
           {/* 输入卡片：有消息时样式不变，仅整体滑到面板底部 */}
           <div ref={blockRef} className="flex flex-col gap-4">
             <div className="chat-input flex min-w-0 items-end gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
-              <TextArea
-                ref={textareaRef}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onPressEnter={(e) => {
-                  if (!e.shiftKey) {
-                    e.preventDefault();
-                    submit();
-                  }
-                }}
-                placeholder="输入消息，Enter 发送，Shift+Enter 换行"
-                autoSize={{ minRows: 3, maxRows: 8 }}
-                variant="borderless"
-                styles={{ textarea: { paddingTop: 10, paddingBottom: 10 } }}
-                className="flex-1"
-              />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                {hasPending && (
+                  <div className="flex flex-wrap gap-2">
+                    {pendingJson && (
+                      <AttachmentChip
+                        name={pendingJson}
+                        kind="json"
+                        onRemove={clearPendingJson}
+                      />
+                    )}
+                    {pendingGltf && (
+                      <AttachmentChip
+                        name={pendingGltf}
+                        kind="glb"
+                        onRemove={clearPendingGltf}
+                      />
+                    )}
+                  </div>
+                )}
+                <TextArea
+                  ref={textareaRef}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onPressEnter={(e) => {
+                    if (!e.shiftKey) {
+                      e.preventDefault();
+                      submit();
+                    }
+                  }}
+                  placeholder="输入消息，Enter 发送，Shift+Enter 换行"
+                  autoSize={{ minRows: 3, maxRows: 8 }}
+                  variant="borderless"
+                  styles={{ textarea: { paddingTop: 10, paddingBottom: 10 } }}
+                  className="flex-1"
+                />
+              </div>
               <Button
                 type="primary"
                 shape="circle"

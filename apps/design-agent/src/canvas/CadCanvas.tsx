@@ -1,107 +1,184 @@
 import { samples } from '@da/cad-core';
+import { CloseOutlined } from '@ant-design/icons';
 import { Button, Select, Tag, Tooltip } from '@da/ui';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCadStore } from '../stores/cadStore';
 import { useViewerStore } from '../stores/viewerStore';
-import { CadViewer } from './CadViewer';
+import { Cad2DViewer } from './Cad2DViewer';
+import { Cad3DViewer } from './Cad3DViewer';
 import PropertyPanel from './PropertyPanel';
 
-/** 右栏：CAD 画布（three.js 渲染 + 平移缩放 + 点击选中 + 属性面板） */
+type ViewTab = '2d' | '3d';
+
+/** 右栏：CAD 画布。2D 图纸与 3D 模型各自持有独立渲染器并常驻，通过选项卡切换显示。 */
 export default function CadCanvas() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const container2dRef = useRef<HTMLDivElement>(null);
+  const container3dRef = useRef<HTMLDivElement>(null);
   const model = useCadStore((s) => s.model);
   const fileName = useCadStore((s) => s.fileName);
   const gltfScene = useCadStore((s) => s.gltfScene);
   const gltfFileName = useCadStore((s) => s.gltfFileName);
   const selectedId = useCadStore((s) => s.selectedId);
   const select = useCadStore((s) => s.select);
+  const [tab, setTab] = useState<ViewTab>('2d');
 
-  // 挂载渲染器
+  // 挂载 2D / 3D 两个渲染器（常驻，切换选项卡不销毁，各自视图状态保留）
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const viewer = new CadViewer({ container, onSelect: (id) => select(id) });
-    useViewerStore.getState().register(viewer);
+    const el2d = container2dRef.current;
+    const el3d = container3dRef.current;
+    if (!el2d || !el3d) return;
+    const viewer2d = new Cad2DViewer({ container: el2d, onSelect: (id) => select(id) });
+    const viewer3d = new Cad3DViewer(el3d);
+    useViewerStore.getState().register2d(viewer2d);
+    useViewerStore.getState().register3d(viewer3d);
     return () => {
-      useViewerStore.getState().unregister(viewer);
-      viewer.dispose();
+      useViewerStore.getState().unregister2d(viewer2d);
+      useViewerStore.getState().unregister3d(viewer3d);
+      viewer2d.dispose();
+      viewer3d.dispose();
     };
   }, [select]);
 
-  // 模型变化 -> 重建场景 + 适配视图（CAD 2D / GLB 3D 互斥）
+  // 2D 模型变化 -> 重建 2D 场景 + 适配视图
   useEffect(() => {
-    const viewer = useViewerStore.getState().viewer;
+    const viewer = useViewerStore.getState().viewer2d;
     if (!viewer) return;
     if (model) {
       viewer.setModel(model);
       viewer.fitView();
-    } else if (gltfScene) {
+    } else {
+      viewer.clearModel();
+    }
+  }, [model]);
+
+  // 3D 模型变化 -> 重建 3D 场景 + 适配视图
+  useEffect(() => {
+    const viewer = useViewerStore.getState().viewer3d;
+    if (!viewer) return;
+    if (gltfScene) {
       viewer.setGltf(gltfScene);
       viewer.fitView();
     } else {
       viewer.clearModel();
     }
-  }, [model, gltfScene]);
+  }, [gltfScene]);
 
-  // 选中变化 -> 高亮
+  // 选中变化 -> 2D 高亮
   useEffect(() => {
-    useViewerStore.getState().viewer?.setSelected(selectedId);
+    useViewerStore.getState().viewer2d?.setSelected(selectedId);
   }, [selectedId]);
+
+  // 新加载模型时自动切到对应选项卡（仅加载时切换，清空时不强制）
+  useEffect(() => {
+    if (fileName) setTab('2d');
+  }, [fileName]);
+  useEffect(() => {
+    if (gltfFileName) setTab('3d');
+  }, [gltfFileName]);
 
   const loadSample = (name: string) => {
     const sample = samples.find((s) => s.name === name);
     if (!sample) return;
     useCadStore.getState().setModel(sample, `${sample.name}.json`);
-    useViewerStore.getState().viewer?.fitView();
+    useViewerStore.getState().viewer2d?.fitView();
   };
-  const fitView = () => useViewerStore.getState().viewer?.fitView();
+  const fitView = () => {
+    if (tab === '2d') useViewerStore.getState().viewer2d?.fitView();
+    else useViewerStore.getState().viewer3d?.fitView();
+  };
   const clear = () => useCadStore.getState().clearModel();
+
+  const hasAnyModel = !!(model || gltfScene);
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-gray-200 px-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="text-sm font-medium text-gray-700">CAD 画布</span>
-          {gltfFileName ? (
-            <Tag color="green" className="max-w-40 truncate">
-              {gltfFileName}
-            </Tag>
-          ) : fileName ? (
-            <Tag color="blue" className="max-w-40 truncate">
-              {fileName}
-            </Tag>
-          ) : (
+          {!hasAnyModel ? (
             <Tag>未加载模型</Tag>
+          ) : (
+            <>
+              {fileName && (
+                <Tag color="blue" className="max-w-40 truncate">
+                  2D · {fileName}
+                </Tag>
+              )}
+              {gltfFileName && (
+                <Tag color="green" className="max-w-40 truncate">
+                  3D · {gltfFileName}
+                </Tag>
+              )}
+            </>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {!gltfScene && (
-            <Select
-              size="small"
-              placeholder="示例模型"
-              allowClear
-              style={{ width: 110 }}
-              options={samples.map((s) => ({ label: s.name, value: s.name }))}
-              onChange={(name) => {
-                if (typeof name === 'string') loadSample(name);
-              }}
-            />
-          )}
-          <Tooltip title="按模型包围盒适配视图">
-            <Button size="small" disabled={!model} onClick={fitView}>
+          <Select
+            size="small"
+            placeholder="示例模型"
+            allowClear
+            style={{ width: 110 }}
+            options={samples.map((s) => ({ label: s.name, value: s.name }))}
+            onChange={(name) => {
+              if (typeof name === 'string') loadSample(name);
+            }}
+          />
+          <Tooltip title="按当前视图模型适配">
+            <Button size="small" disabled={!hasAnyModel} onClick={fitView}>
               适配
             </Button>
           </Tooltip>
           <Tooltip title="清空画布">
-            <Button size="small" danger disabled={!model} onClick={clear}>
+            <Button size="small" danger disabled={!hasAnyModel} onClick={clear}>
               清空
             </Button>
+          </Tooltip>
+          <Tooltip title="关闭画布">
+            <Button
+              size="small"
+              type="text"
+              icon={<CloseOutlined />}
+              aria-label="关闭画布"
+              onClick={() => useCadStore.getState().closeCanvas()}
+            />
           </Tooltip>
         </div>
       </div>
 
-      {/* 画布容器：CadCanvas 仅在 model 存在时挂载，故无需空态占位 */}
-      <div ref={containerRef} className="relative min-h-0 flex-1 overflow-hidden" />
+      {/* 视图选项卡：2D / 3D 渲染器常驻，切换仅控制显隐（保留各自视角状态） */}
+      <div className="flex shrink-0 items-center gap-1 border-b border-gray-200 bg-gray-50 px-3 py-1.5">
+        {(
+          [
+            { key: '2d', label: '2D 视图' },
+            { key: '3d', label: '3D 视图' },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+              tab === t.key
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 画布容器：两个渲染器叠放，隐藏的用 visibility 隐藏以保持尺寸（clientWidth 不塌缩） */}
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div
+          ref={container2dRef}
+          className={`absolute inset-0 ${tab === '2d' ? '' : 'invisible pointer-events-none'}`}
+        />
+        <div
+          ref={container3dRef}
+          className={`absolute inset-0 ${tab === '3d' ? '' : 'invisible pointer-events-none'}`}
+        />
+      </div>
 
       <PropertyPanel />
     </div>

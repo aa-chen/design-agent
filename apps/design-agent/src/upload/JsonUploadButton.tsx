@@ -22,8 +22,8 @@ export default function JsonUploadButton() {
         message.error(`JSON 校验失败：${parsed.errors.slice(0, 3).join('；')}`);
         return;
       }
-      useCadStore.getState().setModel(parsed.data, file.name);
-      useViewerStore.getState().viewer?.fitView();
+      useCadStore.getState().setModel(parsed.data, file.name, { pending: true });
+      useViewerStore.getState().viewer2d?.fitView();
       message.success(`已加载 ${file.name}（元素 ${parsed.data.elements.length} 个）`);
     } catch {
       message.error('JSON 解析失败，请确认是合法的 JSON 文件');

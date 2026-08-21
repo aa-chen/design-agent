@@ -15,6 +15,8 @@ const INITIAL_SCALE = 0.5; // 世界单位 / 像素
 const MIN_SCALE = 0.0005;
 const MAX_SCALE = 50;
 const DRAG_THRESHOLD_PX = 4;
+/** 原点坐标轴基准长度（世界单位），fitView 时按模型尺寸缩放 */
+const AXIS_SIZE = 150;
 
 function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
@@ -22,8 +24,8 @@ function clamp(v: number, min: number, max: number) {
 
 /**
  * 2D 渲染器：CAD 图纸，正交相机从 +Z 俯视 XY 平面。
- * 平移 / 缩放 / 拾取选中均为 2D 专属交互；GLB 3D 渲染见 Cad3DViewer。
- * 命令式生命周期，由 React 组件挂载/销毁。
+ * 缩放（滚轮）/ 拾取选中（点击）为 2D 专属交互；不随鼠标移动平移画布。
+ * GLB 3D 渲染见 Cad3DViewer。命令式生命周期，由 React 组件挂载/销毁。
  */
 export class Cad2DViewer extends RenderingViewer {
   private readonly onSelect: (id: string | null) => void;
@@ -33,6 +35,7 @@ export class Cad2DViewer extends RenderingViewer {
 
   private group: THREE.Group | null = null;
   private pickables = new Map<string, THREE.Object3D>();
+  private axes: THREE.Group | null = null;
 
   private scale = INITIAL_SCALE;
   private viewX = 0;
@@ -42,31 +45,22 @@ export class Cad2DViewer extends RenderingViewer {
 
   private dragging = false;
   private pointerDownPos = { x: 0, y: 0 };
-  private lastPointer = { x: 0, y: 0 };
 
   private readonly onPointerDown = (e: PointerEvent) => {
     if (e.button !== 0) return;
     this.pointerDownPos = { x: e.clientX, y: e.clientY };
-    this.lastPointer = { x: e.clientX, y: e.clientY };
     this.dragging = false;
     this.container.setPointerCapture?.(e.pointerId);
   };
 
+  /** 仅用于区分“点击”与“拖拽”，不再平移画布 */
   private readonly onPointerMove = (e: PointerEvent) => {
-    if (!this.dragging) {
-      const dist = Math.hypot(
-        e.clientX - this.pointerDownPos.x,
-        e.clientY - this.pointerDownPos.y,
-      );
-      if (dist < DRAG_THRESHOLD_PX) return;
-      this.dragging = true;
-    }
-    const dx = e.clientX - this.lastPointer.x;
-    const dy = e.clientY - this.lastPointer.y;
-    this.viewX -= dx * this.scale;
-    this.viewY += dy * this.scale;
-    this.lastPointer = { x: e.clientX, y: e.clientY };
-    this.updateFrustum();
+    if (this.dragging) return;
+    const dist = Math.hypot(
+      e.clientX - this.pointerDownPos.x,
+      e.clientY - this.pointerDownPos.y,
+    );
+    if (dist >= DRAG_THRESHOLD_PX) this.dragging = true;
   };
 
   private readonly onPointerUp = (e: PointerEvent) => {
@@ -96,7 +90,7 @@ export class Cad2DViewer extends RenderingViewer {
     this.camera.lookAt(0, 0, 0);
     this.activeCamera = this.camera;
 
-    this.addGrid();
+    this.addAxes();
     this.updateFrustum();
 
     container.addEventListener('pointerdown', this.onPointerDown);
@@ -112,13 +106,22 @@ export class Cad2DViewer extends RenderingViewer {
     this.updateFrustum();
   }
 
-  private addGrid() {
-    const grid = new THREE.GridHelper(2000, 40, 0x0f172a, 0x0f172a);
-    grid.rotation.x = Math.PI / 2;
-    const mat = grid.material as THREE.Material;
-    mat.opacity = 0.1;
-    mat.transparent = true;
-    this.scene.add(grid);
+  /** 原点坐标轴（2D 俯视图只显示 X/Y 轴，Z 轴垂直屏幕故省略） */
+  private addAxes() {
+    const group = new THREE.Group();
+    const addAxis = (color: number, to: [number, number, number]) => {
+      const geo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(...to),
+      ]);
+      group.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color })));
+    };
+    addAxis(0xff0000, [AXIS_SIZE, 0, 0]); // X 轴（红）
+    addAxis(0x00ff00, [0, AXIS_SIZE, 0]); // Y 轴（绿）
+    // 略高于图纸平面，避免与模型线在同一 z 上 z-fighting
+    group.position.z = 0.05;
+    this.scene.add(group);
+    this.axes = group;
   }
 
   /** 根据 view 中心与 zoom 更新正交相机视锥 */
@@ -168,7 +171,7 @@ export class Cad2DViewer extends RenderingViewer {
     this.requestRender();
   }
 
-  /** 清空场景中的 2D 模型对象（网格底图保留） */
+  /** 清空场景中的 2D 模型对象（原点坐标轴保留） */
   clearModel() {
     if (this.group) {
       this.scene.remove(this.group);
@@ -197,6 +200,9 @@ export class Cad2DViewer extends RenderingViewer {
     );
     this.viewX = center.x;
     this.viewY = center.y;
+    // 坐标轴长度约为模型最大边的一半（随模型尺寸缩放）
+    const axisScale = (Math.max(size.x, size.y) * 0.5) / AXIS_SIZE;
+    this.axes?.scale.setScalar(axisScale || 1);
     this.updateFrustum();
   }
 
@@ -224,6 +230,11 @@ export class Cad2DViewer extends RenderingViewer {
 
   override dispose() {
     this.clearModel();
+    if (this.axes) {
+      this.scene.remove(this.axes);
+      disposeObjectGroup(this.axes);
+      this.axes = null;
+    }
     this.container.removeEventListener('pointerdown', this.onPointerDown);
     this.container.removeEventListener('pointermove', this.onPointerMove);
     this.container.removeEventListener('pointerup', this.onPointerUp);

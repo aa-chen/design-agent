@@ -6,7 +6,7 @@ const SCENE_BACKGROUND = '#f8fafc';
 /**
  * 渲染器公共基类：负责 WebGLRenderer 创建、rAF 渲染循环、窗口 resize 与销毁。
  * 相机、场景内容与交互由 2D / 3D 子类各自实现：
- * - Cad2DViewer：正交俯视 2D 图纸（平移/缩放/拾取）
+ * - Cad2DViewer：正交俯视 2D 图纸（缩放/拾取）
  * - Cad3DViewer：透视 3D 模型（轨道控制/光照）
  */
 export abstract class RenderingViewer {
