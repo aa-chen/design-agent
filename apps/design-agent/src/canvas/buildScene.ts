@@ -8,7 +8,7 @@ import type {
 } from '@da/cad-core';
 import * as THREE from 'three';
 
-/** 选中高亮色（CadViewer 与之配合） */
+/** 选中高亮色（Cad2DViewer 与之配合） */
 export const HIGHLIGHT_COLOR = '#ff7a00';
 
 /** 图层默认色表 */
