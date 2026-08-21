@@ -18,12 +18,19 @@ const LAYER_COLORS: Record<string, string> = {
   辅助线: '#94a3b8',
   尺寸: '#059669',
   文本: '#0f172a',
+  '0': '#2563eb', // 导出图纸的可见轮廓层
+  虚线: '#94a3b8', // 隐藏线
+  双点划线: '#64748b', // 假想线（双点划线）
 };
 
 const DEFAULT_COLOR = '#334155';
 
 /** 标注图形略高于几何元素，避免 z-fighting */
 const Z_ANNOTATION = 0.02;
+
+/** 虚线样式参数（世界单位） */
+const DASH_SIZE = 6;
+const DASH_GAP = 3;
 
 const v = (p: Vec3) => new THREE.Vector3(p[0], p[1], p[2]);
 
@@ -33,8 +40,21 @@ function resolveColor(el: { color?: string; layer?: string }): string {
   return DEFAULT_COLOR;
 }
 
-function makeLineMaterial(color: string) {
+function makeLineMaterial(color: string, lineStyle?: 'solid' | 'dashed') {
+  if (lineStyle === 'dashed') {
+    return new THREE.LineDashedMaterial({
+      color: new THREE.Color(color),
+      dashSize: DASH_SIZE,
+      gapSize: DASH_GAP,
+    });
+  }
   return new THREE.LineBasicMaterial({ color: new THREE.Color(color) });
+}
+
+/** 虚线需调用 computeLineDistances 才能显示 dash 效果 */
+function finalizeLine<T extends THREE.Line>(line: T, lineStyle?: 'solid' | 'dashed'): T {
+  if (lineStyle === 'dashed') line.computeLineDistances();
+  return line;
 }
 
 /** 标记对象可拾取并登记到 pickables（选中高亮/属性面板用），返回原对象以保留具体类型 */
@@ -58,20 +78,22 @@ function buildElement(
   switch (el.type) {
     case 'line': {
       const geo = new THREE.BufferGeometry().setFromPoints([v(el.from), v(el.to)]);
-      return register(new THREE.Line(geo, makeLineMaterial(color)), el.id, color, pickables);
+      const line = new THREE.Line(geo, makeLineMaterial(color, el.lineStyle));
+      return register(finalizeLine(line, el.lineStyle), el.id, color, pickables);
     }
     case 'polyline': {
       const pts = el.points.map(v);
       const geo = new THREE.BufferGeometry().setFromPoints(pts);
       const line = el.closed
-        ? new THREE.LineLoop(geo, makeLineMaterial(color))
-        : new THREE.Line(geo, makeLineMaterial(color));
-      return register(line, el.id, color, pickables);
+        ? new THREE.LineLoop(geo, makeLineMaterial(color, el.lineStyle))
+        : new THREE.Line(geo, makeLineMaterial(color, el.lineStyle));
+      return register(finalizeLine(line, el.lineStyle), el.id, color, pickables);
     }
     case 'circle': {
       const pts = sampleCircle(el.center, el.radius, 64);
       const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      return register(new THREE.LineLoop(geo, makeLineMaterial(color)), el.id, color, pickables);
+      const loop = new THREE.LineLoop(geo, makeLineMaterial(color, el.lineStyle));
+      return register(finalizeLine(loop, el.lineStyle), el.id, color, pickables);
     }
     case 'arc':
       return register(buildArcLine(el, color), el.id, color, pickables);
@@ -83,7 +105,8 @@ function buildElement(
         new THREE.Vector3(el.min[0], el.max[1], 0),
       ];
       const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      return register(new THREE.LineLoop(geo, makeLineMaterial(color)), el.id, color, pickables);
+      const loop = new THREE.LineLoop(geo, makeLineMaterial(color, el.lineStyle));
+      return register(finalizeLine(loop, el.lineStyle), el.id, color, pickables);
     }
     case 'text': {
       const sprite = makeTextSprite(el.content, {
@@ -100,7 +123,8 @@ function buildElement(
 function buildArcLine(el: ArcElement, color: string): THREE.Line {
   const pts = sampleArc(el.center, el.radius, el.startAngle, el.endAngle, 32);
   const geo = new THREE.BufferGeometry().setFromPoints(pts);
-  return new THREE.Line(geo, makeLineMaterial(color));
+  const line = new THREE.Line(geo, makeLineMaterial(color, el.lineStyle));
+  return finalizeLine(line, el.lineStyle);
 }
 
 function buildAnnotation(
@@ -179,7 +203,7 @@ function buildDimension(
   const mid = dlFrom.clone().add(dlTo).multiplyScalar(0.5);
   const text = ann.text ?? '';
   if (text) {
-    const sprite = makeTextSprite(text, { height: 4, color });
+    const sprite = makeTextSprite(text, { height: ann.textHeight ?? 4, color });
     sprite.position.copy(mid);
     sprite.userData.isAnnotationLabel = true;
     segments.add(sprite);

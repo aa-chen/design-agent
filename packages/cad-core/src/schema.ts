@@ -7,6 +7,7 @@ const baseSchema = {
   layer: z.string().optional(),
   color: z.string().optional(),
   visible: z.boolean().optional(),
+  lineStyle: z.enum(['solid', 'dashed']).optional(),
 };
 
 export const elementSchema = z.discriminatedUnion('type', [
@@ -59,6 +60,7 @@ export const annotationSchema = z.discriminatedUnion('type', [
     to: vec3Schema,
     offset: vec3Schema,
     text: z.string().optional(),
+    textHeight: z.number().optional(),
     ...baseSchema,
   }),
   z.object({

@@ -6,6 +6,8 @@ export interface CadElementBase {
   layer?: string;
   color?: string;
   visible?: boolean;
+  /** 线型：solid 实线 / dashed 虚线（隐藏线、中心线等） */
+  lineStyle?: 'solid' | 'dashed';
 }
 
 export interface LineElement extends CadElementBase {
@@ -62,6 +64,8 @@ export interface AnnotationBase {
   layer?: string;
   color?: string;
   visible?: boolean;
+  /** 线型：solid 实线 / dashed 虚线（隐藏线、中心线等） */
+  lineStyle?: 'solid' | 'dashed';
 }
 
 /** 线性尺寸标注：尺寸线 + 延伸线 + 箭头 + 文本。尺寸线位于 from+offset → to+offset。 */
@@ -71,6 +75,8 @@ export interface DimensionAnnotation extends AnnotationBase {
   to: Vec3;
   offset: Vec3;
   text?: string;
+  /** 文本高度（世界单位） */
+  textHeight?: number;
 }
 
 /** 引注文本标注 */
