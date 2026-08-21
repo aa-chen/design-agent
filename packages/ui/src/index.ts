@@ -23,5 +23,7 @@ export { Dropdown } from './components/Dropdown';
 export type { DropdownProps } from './components/Dropdown';
 export { Spin } from './components/Spin';
 export type { SpinProps } from './components/Spin';
+export { ScrollArea, ScrollBar } from './components/ScrollArea';
+export type { ScrollAreaProps, ScrollBarProps } from './components/ScrollArea';
 
 export { useMessage } from './hooks/useMessage';

@@ -12,13 +12,18 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
+    "antd": ">=6",
     "react": ">=19",
-    "react-dom": ">=19",
-    "antd": ">=6"
+    "react-dom": ">=19"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-scroll-area": "^1.2.18",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.6.0"
   }
 }

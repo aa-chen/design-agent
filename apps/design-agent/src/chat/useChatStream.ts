@@ -1,11 +1,19 @@
 import { useEffect, useRef } from 'react';
+import { DeepSeekHarnessChatStreamClient } from '../sse/DeepSeekHarnessChatStreamClient';
 import { MockChatStreamClient } from '../sse/MockChatStreamClient';
 import type { ChatAttachment, ChatStreamClient } from '../sse/types';
 import { useCadStore } from '../stores/cadStore';
 import { useChatStore } from '../stores/chatStore';
 
-/** 流式客户端单例。后续接入真实后端时替换为 HttpChatStreamClient 实例即可。 */
-const client: ChatStreamClient = new MockChatStreamClient();
+/**
+ * 流式客户端单例。
+ * - 默认接入本地 DeepSeek Harness（dsh web，经 Vite `/dsh` 代理）
+ * - VITE_CHAT_CLIENT=mock 时回退到 Mock，便于无 Harness 时调试 UI
+ */
+const client: ChatStreamClient =
+  import.meta.env.VITE_CHAT_CLIENT === 'mock'
+    ? new MockChatStreamClient()
+    : new DeepSeekHarnessChatStreamClient();
 
 function createAttachmentId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {

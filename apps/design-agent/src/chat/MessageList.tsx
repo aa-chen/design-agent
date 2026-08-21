@@ -1,3 +1,4 @@
+import { ScrollArea } from '@da/ui';
 import { useEffect, useRef } from 'react';
 import type { ChatMessage } from '../sse/types';
 import { useChatStore } from '../stores/chatStore';
@@ -7,9 +8,8 @@ import { MessageItem } from './MessageItem';
 const EMPTY_MESSAGES: ChatMessage[] = [];
 
 /**
- * 消息列表：自动滚动到底部（流式更新时跟随）。
+ * 消息列表：占满输入框以上区域，自动滚动到底部（流式更新时跟随）。
  * 无消息时返回 null —— 引导文案由居中展示的欢迎标题与输入框承担。
- * 底部空间由 ChatPanel 的占位条预留，这里只保留少量呼吸间距。
  */
 export function MessageList() {
   const activeSessionId = useChatStore((s) => s.activeSessionId);
@@ -28,11 +28,13 @@ export function MessageList() {
   if (!activeSessionId || messages.length === 0) return null;
 
   return (
-    <div className="h-full overflow-y-auto px-4 pb-4 pt-4">
-      {messages.map((m) => (
-        <MessageItem key={m.id} message={m} />
-      ))}
-      <div ref={endRef} />
-    </div>
+    <ScrollArea className="h-full">
+      <div className="px-4 pb-4 pt-4">
+        {messages.map((m) => (
+          <MessageItem key={m.id} message={m} />
+        ))}
+        <div ref={endRef} />
+      </div>
+    </ScrollArea>
   );
 }

@@ -56,7 +56,7 @@ export default function GltfUploadButton() {
           e.target.value = '';
         }}
       />
-      <Button icon={<UploadOutlined />} onClick={() => inputRef.current?.click()}>
+      <Button size="small" icon={<UploadOutlined />} onClick={() => inputRef.current?.click()}>
         上传 GLB
       </Button>
     </>
