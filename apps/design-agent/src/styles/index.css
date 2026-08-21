@@ -1,0 +1,58 @@
+/* antd 提供全局 reset，因此这里只引入 tailwind 的 theme + utilities，跳过 preflight 以避免冲突 */
+@import "tailwindcss/theme";
+@import "tailwindcss/utilities";
+
+:root {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+/* AI 回复的 Markdown 排版 */
+.md-body p {
+  margin: 0.4em 0;
+}
+.md-body ul,
+.md-body ol {
+  margin: 0.4em 0;
+  padding-left: 1.5em;
+}
+.md-body li {
+  margin: 0.2em 0;
+}
+.md-body code {
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+  font-size: 0.9em;
+}
+.md-body pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 0.6em 0.8em;
+  overflow-x: auto;
+}
+.md-body pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+.md-body a {
+  color: #2563eb;
+}
+
+/* 聊天输入框：内层 TextArea 聚焦不高亮，聚焦反馈统一由外层卡片（.chat-input）承担 */
+.chat-input textarea.ant-input:focus,
+.chat-input textarea.ant-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}

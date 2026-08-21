@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "name": "Bracket-01 支架",
+  "unit": "mm",
+  "parts": [
+    { "id": "p1", "name": "支架主体", "elementIds": ["e-rect", "e-hole", "e-slot"] }
+  ],
+  "elements": [
+    { "type": "rect", "id": "e-rect", "min": [0, 0, 0], "max": [100, 60, 0], "layer": "轮廓" },
+    { "type": "circle", "id": "e-hole", "center": [50, 30, 0], "radius": 12, "layer": "轮廓" },
+    {
+      "type": "polyline",
+      "id": "e-slot",
+      "points": [[20, 45, 0], [20, 15, 0], [80, 15, 0]],
+      "closed": false,
+      "layer": "辅助线"
+    }
+  ],
+  "annotations": [
+    { "type": "dimension", "id": "a-width", "from": [0, 0, 0], "to": [100, 0, 0], "offset": [0, -15, 0], "text": "100" },
+    { "type": "dimension", "id": "a-height", "from": [0, 0, 0], "to": [0, 60, 0], "offset": [-15, 0, 0], "text": "60" },
+    { "type": "text", "id": "a-note", "position": [50, 30, 0], "content": "Φ24", "height": 8 }
+  ]
+}
