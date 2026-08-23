@@ -3,6 +3,7 @@ import { CloseOutlined } from '@ant-design/icons';
 import { Button, Select, Tag, Tooltip } from '@da/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useCadStore } from '../stores/cadStore';
+import { useThemeStore } from '../stores/themeStore';
 import { useViewerStore } from '../stores/viewerStore';
 import { Cad2DViewer } from './Cad2DViewer';
 import { Cad3DViewer } from './Cad3DViewer';
@@ -21,6 +22,15 @@ export default function CadCanvas() {
   const selectedId = useCadStore((s) => s.selectedId);
   const select = useCadStore((s) => s.select);
   const [tab, setTab] = useState<ViewTab>('2d');
+  const themeMode = useThemeStore((s) => s.mode);
+
+  // 主题切换时同步 3D/2D 场景背景色
+  useEffect(() => {
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--scene-bg').trim();
+    if (!bg) return;
+    useViewerStore.getState().viewer2d?.setBackground(bg);
+    useViewerStore.getState().viewer3d?.setBackground(bg);
+  }, [themeMode]);
 
   // 挂载 2D / 3D 两个渲染器（常驻，切换选项卡不销毁，各自视图状态保留）
   useEffect(() => {
@@ -92,9 +102,9 @@ export default function CadCanvas() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-gray-200 px-3">
+      <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">CAD 画布</span>
+          <span className="text-sm font-medium text-[var(--text-primary)]">CAD 画布</span>
           {!hasAnyModel ? (
             <Tag>未加载模型</Tag>
           ) : (
@@ -146,7 +156,7 @@ export default function CadCanvas() {
       </div>
 
       {/* 视图选项卡：2D / 3D 渲染器常驻，切换仅控制显隐（保留各自视角状态） */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-gray-200 bg-gray-50 px-3 py-1.5">
+      <div className="flex shrink-0 items-center gap-1 border-b border-[var(--border)] bg-[var(--bg-subtle)] px-3 py-1.5">
         {(
           [
             { key: '2d', label: '2D 视图' },
@@ -159,8 +169,8 @@ export default function CadCanvas() {
             onClick={() => setTab(t.key)}
             className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
               tab === t.key
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-sm'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             {t.label}

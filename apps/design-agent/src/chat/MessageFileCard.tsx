@@ -16,13 +16,11 @@ export function MessageFileCard({ attachment }: { attachment: ChatAttachment }) 
     <button
       type="button"
       onClick={open}
-      className="mt-1.5 inline-flex max-w-full items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-xs text-gray-700 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50"
+      className="mt-1.5 inline-flex max-w-full items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2 text-left text-xs text-[var(--text-primary)] shadow-sm transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-hover)]"
     >
-      <FileOutlined
-        className={attachment.kind === 'json' ? 'text-blue-500' : 'text-green-600'}
-      />
+      <FileOutlined className="text-[var(--text-secondary)]" />
       <span className="min-w-0 truncate font-medium">{attachment.name}</span>
-      <span className="shrink-0 text-gray-400">
+      <span className="shrink-0 text-[var(--text-muted)]">
         {attachment.kind === 'json' ? 'JSON' : 'GLB'} · 打开画布
       </span>
     </button>

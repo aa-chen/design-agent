@@ -1,5 +1,5 @@
 export { DesignProvider } from './provider/DesignProvider';
-export type { DesignProviderProps } from './provider/DesignProvider';
+export type { DesignProviderProps, ThemeMode } from './provider/DesignProvider';
 
 export { Button } from './components/Button';
 export type { ButtonProps } from './components/Button';

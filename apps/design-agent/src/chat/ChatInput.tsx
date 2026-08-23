@@ -16,9 +16,11 @@ import { useSendMessage } from './useChatStream';
  */
 export function ChatInput({
   centered,
+  canvasOpen,
   onHeightChange,
 }: {
   centered: boolean;
+  canvasOpen: boolean;
   /** 输入卡片区域（不含欢迎标题）的高度变化，父组件据此预留底部空间 */
   onHeightChange?: (height: number) => void;
 }) {
@@ -61,7 +63,7 @@ export function ChatInput({
         transform: centered ? 'translateY(-50%)' : 'translateY(-100%)',
       }}
     >
-      <div className="px-4">
+      <div className={`transition-[padding] duration-300 ease-out ${canvasOpen ? 'px-4 pr-6' : 'px-4'}`}>
         <div className="mx-auto w-full max-w-3xl">
           {/* 欢迎标题：居中时展示，贴底后收起 */}
           <div
@@ -70,17 +72,17 @@ export function ChatInput({
             }`}
           >
             <div className="text-center">
-              <h2 className="text-xl font-medium text-gray-800">
+              <h2 className="text-xl font-medium text-[var(--text-primary)]">
                 你好，我是你的 CAD 设计助手
               </h2>
-              <p className="mt-1.5 text-sm text-gray-500">
+              <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
                 上传 JSON / GLB 文件，或直接描述你的设计需求
               </p>
             </div>
           </div>
           {/* 输入卡片：贴底时预留底部间距，避免贴边 */}
           <div ref={blockRef} className={centered ? undefined : 'pb-4'}>
-            <div className="chat-input flex min-w-0 flex-col gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
+            <div className="chat-input flex min-w-0 flex-col gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 shadow-sm focus-within:border-[var(--border-strong)] focus-within:ring-4 focus-within:ring-[var(--focus-ring)]">
               {hasPending && (
                 <div className="flex flex-wrap gap-2">
                   {pendingJson && (

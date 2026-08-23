@@ -15,8 +15,8 @@ export function MessageItem({ message }: { message: ChatMessage }) {
         <div
           className={`rounded-lg px-3 py-2 ${
             isUser
-              ? 'bg-blue-500 text-white'
-              : 'border border-gray-200 bg-white text-gray-800'
+              ? 'bg-[var(--accent)] text-[var(--accent-fg)]'
+              : 'border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-primary)]'
           }`}
         >
           {isUser ? (
@@ -25,10 +25,10 @@ export function MessageItem({ message }: { message: ChatMessage }) {
             <div className="md-body text-sm">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
               {message.streaming && message.content === '' && (
-                <span className="animate-pulse text-gray-400">正在思考…</span>
+                <span className="animate-pulse text-[var(--text-muted)]">正在思考…</span>
               )}
               {message.streaming && message.content !== '' && (
-                <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-gray-400 align-text-bottom" />
+                <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-[var(--text-muted)] align-text-bottom" />
               )}
               {message.error && (
                 <div className="mt-2">

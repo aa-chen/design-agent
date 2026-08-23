@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
-/** 场景背景色（2D / 3D 共用） */
-const SCENE_BACKGROUND = '#f8fafc';
+/** 场景背景色默认值（2D / 3D 共用，运行时可通过 setBackground 覆盖） */
+const DEFAULT_SCENE_BACKGROUND = '#fafafa';
 
 /**
  * 渲染器公共基类：负责 WebGLRenderer 创建、rAF 渲染循环、窗口 resize 与销毁。
@@ -30,8 +30,14 @@ export abstract class RenderingViewer {
     this.renderer.setSize(w, h);
     container.appendChild(this.renderer.domElement);
 
-    this.scene.background = new THREE.Color(SCENE_BACKGROUND);
+    this.scene.background = new THREE.Color(DEFAULT_SCENE_BACKGROUND);
     window.addEventListener('resize', this.onResize);
+  }
+
+  /** 更新场景背景色（主题切换时调用） */
+  setBackground(color: string) {
+    this.scene.background = new THREE.Color(color);
+    this.requestRender();
   }
 
   /** 容器尺寸变化时更新相机投影（透视更新 aspect；正交重算视锥） */

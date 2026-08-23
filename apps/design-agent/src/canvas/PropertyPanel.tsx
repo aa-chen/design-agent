@@ -89,13 +89,13 @@ export default function PropertyPanel() {
   if (!target) return null;
 
   return (
-    <div className="shrink-0 border-t border-gray-200 bg-white">
+    <div className="shrink-0 border-t border-[var(--border)] bg-[var(--bg-elevated)]">
       <div className="flex items-center justify-between px-3 py-1.5">
-        <span className="text-xs font-medium text-gray-500">{target.kind}</span>
+        <span className="text-xs font-medium text-[var(--text-secondary)]">{target.kind}</span>
         <button
           type="button"
           title="关闭"
-          className="text-gray-400 transition-colors hover:text-gray-600"
+          className="text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
           onClick={() => select(null)}
         >
           <CloseOutlined />
@@ -105,8 +105,8 @@ export default function PropertyPanel() {
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
           {target.rows.map((r) => (
             <div key={r.label} className="flex items-baseline justify-between gap-2">
-              <span className="shrink-0 text-gray-400">{r.label}</span>
-              <span className="truncate text-gray-800" title={r.value}>
+              <span className="shrink-0 text-[var(--text-muted)]">{r.label}</span>
+              <span className="truncate text-[var(--text-primary)]" title={r.value}>
                 {r.value || '—'}
               </span>
             </div>

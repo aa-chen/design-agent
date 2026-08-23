@@ -11,7 +11,7 @@ const EMPTY_MESSAGES: ChatMessage[] = [];
  * 消息列表：占满输入框以上区域，自动滚动到底部（流式更新时跟随）。
  * 无消息时返回 null —— 引导文案由居中展示的欢迎标题与输入框承担。
  */
-export function MessageList() {
+export function MessageList({ canvasOpen }: { canvasOpen: boolean }) {
   const activeSessionId = useChatStore((s) => s.activeSessionId);
   const messages = useChatStore((s) =>
     s.activeSessionId
@@ -29,7 +29,7 @@ export function MessageList() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="px-4 pb-4 pt-4">
+      <div className={`pb-4 pt-4 transition-[padding] duration-300 ease-out ${canvasOpen ? 'px-4 pr-6' : 'px-4'}`}>
         {messages.map((m) => (
           <MessageItem key={m.id} message={m} />
         ))}
