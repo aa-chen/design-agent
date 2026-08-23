@@ -2,12 +2,16 @@ import { Tag } from '@da/ui';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { ChatMessage } from '../sse/types';
+import { useChatStore } from '../stores/chatStore';
 import { MessageFileCard } from './MessageFileCard';
 
 /** 单条聊天消息。assistant 消息用 Markdown 渲染并带流式光标。 */
 export function MessageItem({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
   const attachments = message.attachments ?? [];
+  const awaitingHitl = useChatStore((s) =>
+    s.activeSessionId ? s.assistantStatus[s.activeSessionId] === 'awaiting-hitl' : false,
+  );
 
   return (
     <div className={`mb-3 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -25,7 +29,9 @@ export function MessageItem({ message }: { message: ChatMessage }) {
             <div className="md-body text-sm">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
               {message.streaming && message.content === '' && (
-                <span className="animate-pulse text-gray-400">正在思考…</span>
+                <span className="animate-pulse text-gray-400">
+                  {awaitingHitl ? '等待你确认…' : '正在思考…'}
+                </span>
               )}
               {message.streaming && message.content !== '' && (
                 <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-gray-400 align-text-bottom" />

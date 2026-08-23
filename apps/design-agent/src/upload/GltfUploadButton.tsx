@@ -8,7 +8,7 @@ import { useViewerStore } from '../stores/viewerStore';
 const loader = new GLTFLoader();
 
 /** 上传 GLB → GLTFLoader 解析 → 写入 cadStore（画布切到 3D 视角展示） */
-export default function GltfUploadButton() {
+export default function GltfUploadButton({ disabled = false }: { disabled?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const message = useMessage();
 
@@ -56,7 +56,12 @@ export default function GltfUploadButton() {
           e.target.value = '';
         }}
       />
-      <Button size="small" icon={<UploadOutlined />} onClick={() => inputRef.current?.click()}>
+      <Button
+        size="small"
+        icon={<UploadOutlined />}
+        disabled={disabled}
+        onClick={() => inputRef.current?.click()}
+      >
         上传 GLB
       </Button>
     </>

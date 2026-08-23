@@ -46,4 +46,8 @@ export class MockChatStreamClient implements ChatStreamClient {
     if (signal.aborted) return;
     yield { type: 'done' };
   }
+
+  async respond(): Promise<{ accepted: boolean; reason?: string }> {
+    return { accepted: true };
+  }
 }

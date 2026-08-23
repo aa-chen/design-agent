@@ -6,7 +6,7 @@ import { useCadStore } from '../stores/cadStore';
 import { useViewerStore } from '../stores/viewerStore';
 
 /** 上传 JSON → zod 校验 → 写入 cadStore（画布据此重建场景） */
-export default function JsonUploadButton() {
+export default function JsonUploadButton({ disabled = false }: { disabled?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const message = useMessage();
 
@@ -43,7 +43,12 @@ export default function JsonUploadButton() {
           e.target.value = '';
         }}
       />
-      <Button size="small" icon={<UploadOutlined />} onClick={() => inputRef.current?.click()}>
+      <Button
+        size="small"
+        icon={<UploadOutlined />}
+        disabled={disabled}
+        onClick={() => inputRef.current?.click()}
+      >
         上传 JSON
       </Button>
     </>

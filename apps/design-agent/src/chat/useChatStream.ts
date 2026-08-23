@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { DeepSeekHarnessChatStreamClient } from '../sse/DeepSeekHarnessChatStreamClient';
 import { MockChatStreamClient } from '../sse/MockChatStreamClient';
-import type { ChatAttachment, ChatStreamClient } from '../sse/types';
+import type { ChatAttachment, ChatStreamClient, HitlRespondPayload } from '../sse/types';
 import { useCadStore } from '../stores/cadStore';
 import { useChatStore } from '../stores/chatStore';
 
@@ -87,6 +87,34 @@ export function useSendMessage() {
           case 'delta':
             useChatStore.getState().appendDelta(sessionId, assistantMessageId, event.text);
             break;
+          case 'approval':
+            useChatStore.getState().setPendingHitl(sessionId, {
+              kind: 'approval',
+              rpcId: event.rpcId,
+              sessionId: event.sessionId,
+              approvalId: event.approvalId,
+              toolName: event.toolName,
+              callId: event.callId,
+              reason: event.reason,
+            });
+            break;
+          case 'question':
+            useChatStore.getState().setPendingHitl(sessionId, {
+              kind: 'question',
+              rpcId: event.rpcId,
+              sessionId: event.sessionId,
+              questions: event.questions,
+            });
+            break;
+          case 'hitl-resolved': {
+            const pending = useChatStore.getState().pendingHitlBySession[sessionId];
+            const match =
+              event.kind === 'approval'
+                ? pending?.kind === 'approval' && pending.approvalId === event.approvalId
+                : pending?.kind === 'question' && pending.rpcId === event.rpcId;
+            if (match) useChatStore.getState().clearPendingHitl(sessionId);
+            break;
+          }
           case 'error':
             useChatStore
               .getState()
@@ -110,7 +138,30 @@ export function useSendMessage() {
     }
   };
 
-  const stop = () => abortRef.current?.abort();
+  const stop = () => {
+    const sid = useChatStore.getState().activeSessionId;
+    const pending = sid ? useChatStore.getState().pendingHitlBySession[sid] : null;
+    if (pending?.kind === 'question') {
+      void client.respond?.({ kind: 'question-cancel', rpcId: pending.rpcId }).catch(() => undefined);
+    }
+    abortRef.current?.abort();
+  };
 
-  return { send, stop };
+  const respondHitl = async (payload: HitlRespondPayload) => {
+    if (!client.respond) {
+      const sid = useChatStore.getState().activeSessionId;
+      if (sid) useChatStore.getState().setPendingHitlError(sid, '当前客户端不支持人工处理');
+      return;
+    }
+    const result = await client.respond(payload);
+    const sid = useChatStore.getState().activeSessionId;
+    if (!sid) return;
+    if (result.accepted || result.reason === 'not-pending') {
+      useChatStore.getState().clearPendingHitl(sid);
+      return;
+    }
+    useChatStore.getState().setPendingHitlError(sid, result.reason ?? '提交失败');
+  };
+
+  return { send, stop, respondHitl };
 }

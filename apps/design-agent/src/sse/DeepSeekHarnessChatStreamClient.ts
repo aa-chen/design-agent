@@ -1,5 +1,6 @@
 import type { CadModel } from '@da/cad-core';
-import type { ChatMessage, ChatRequest, ChatStreamClient, StreamEvent } from './types';
+import { buildRespondEnvelope, mapMuxEnvelopeToStreamEvent } from './hitl';
+import type { ChatMessage, ChatRequest, ChatStreamClient, HitlRespondPayload, StreamEvent } from './types';
 
 type RpcResult<T> =
   | { ok: true; value: T }
@@ -234,13 +235,9 @@ export class DeepSeekHarnessChatStreamClient implements ChatStreamClient {
       const sessionId = payload.sessionId as string | undefined;
       if (sessionId && sessionId !== dshSessionId) return;
 
-      if (method === 'approval/requested' || method === 'question/requested') {
-        finished = true;
-        push({
-          type: 'error',
-          message:
-            'DeepSeek Harness 需要人工批准/回答，请到 http://127.0.0.1:3080 处理后再试',
-        });
+      const hitl = mapMuxEnvelopeToStreamEvent(env);
+      if (hitl) {
+        push(hitl);
         return;
       }
 
@@ -380,5 +377,26 @@ export class DeepSeekHarnessChatStreamClient implements ChatStreamClient {
       return { ok: false, error: { message: '无效的 Harness 响应' } };
     }
     return result;
+  }
+
+  async respond(payload: HitlRespondPayload): Promise<{ accepted: boolean; reason?: string }> {
+    try {
+      const res = await fetch(`${dshHttpBase()}/api/respond`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(buildRespondEnvelope(payload)),
+      });
+      if (!res.ok) {
+        return { accepted: false, reason: `HTTP ${res.status}` };
+      }
+      const body = (await res.json()) as { accepted?: boolean; reason?: string };
+      if (body.accepted === true) return { accepted: true };
+      return { accepted: false, reason: body.reason ?? 'bad-response' };
+    } catch (err) {
+      return {
+        accepted: false,
+        reason: err instanceof Error ? err.message : '提交失败',
+      };
+    }
   }
 }
