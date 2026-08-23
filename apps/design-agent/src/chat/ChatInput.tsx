@@ -1,13 +1,14 @@
-import { SendOutlined } from '@ant-design/icons';
-import { Button, TextArea } from '@da/ui';
-import type { TextAreaRef } from '@da/ui';
-import { useEffect, useRef, useState } from 'react';
-import { useCadStore } from '../stores/cadStore';
-import { useChatStore } from '../stores/chatStore';
-import GltfUploadButton from '../upload/GltfUploadButton';
-import JsonUploadButton from '../upload/JsonUploadButton';
-import { AttachmentChip } from './AttachmentChip';
-import { useSendMessage } from './useChatStream';
+import { SendOutlined, StopOutlined } from "@ant-design/icons";
+import { Button, TextArea } from "@da/ui";
+import type { TextAreaRef } from "@da/ui";
+import { useEffect, useRef, useState } from "react";
+import { useCadStore } from "../stores/cadStore";
+import { useChatStore } from "../stores/chatStore";
+import GltfUploadButton from "../upload/GltfUploadButton";
+import JsonUploadButton from "../upload/JsonUploadButton";
+import { AttachmentChip } from "./AttachmentChip";
+import { HitlDock } from "./HitlDock";
+import { useSendMessage } from "./useChatStream";
 
 /**
  * 输入区：多行输入 + 左下角上传 JSON/GLB + 右下角发送。
@@ -24,11 +25,18 @@ export function ChatInput({
   /** 输入卡片区域（不含欢迎标题）的高度变化，父组件据此预留底部空间 */
   onHeightChange?: (height: number) => void;
 }) {
-  const [text, setText] = useState('');
-  const { send } = useSendMessage();
-  const streaming = useChatStore((s) =>
-    s.activeSessionId ? s.assistantStatus[s.activeSessionId] === 'streaming' : false,
+  const [text, setText] = useState("");
+  const { send, stop, respondHitl } = useSendMessage();
+  const assistantStatus = useChatStore((s) =>
+    s.activeSessionId ? s.assistantStatus[s.activeSessionId] : undefined,
   );
+  const pendingHitl = useChatStore((s) =>
+    s.activeSessionId
+      ? (s.pendingHitlBySession[s.activeSessionId] ?? null)
+      : null,
+  );
+  const busy =
+    assistantStatus === "streaming" || assistantStatus === "awaiting-hitl";
   const pendingJson = useCadStore((s) => s.pendingJson);
   const pendingGltf = useCadStore((s) => s.pendingGltf);
   const clearPendingJson = useCadStore((s) => s.clearPendingJson);
@@ -49,9 +57,9 @@ export function ChatInput({
   }, [onHeightChange]);
 
   const submit = () => {
-    if (!text.trim()) return;
+    if (busy || !text.trim()) return;
     send(text);
-    setText('');
+    setText("");
     textareaRef.current?.focus();
   };
 
@@ -59,16 +67,18 @@ export function ChatInput({
     <div
       className="absolute inset-x-0 z-10 transition-[top,transform] duration-500 ease-in-out"
       style={{
-        top: centered ? '50%' : '100%',
-        transform: centered ? 'translateY(-50%)' : 'translateY(-100%)',
+        top: centered ? "50%" : "100%",
+        transform: centered ? "translateY(-50%)" : "translateY(-100%)",
       }}
     >
-      <div className={`transition-[padding] duration-300 ease-out ${canvasOpen ? 'px-4 pr-6' : 'px-4'}`}>
+      <div
+        className={`transition-[padding] duration-300 ease-out ${canvasOpen ? "px-4 pr-6" : "px-4"}`}
+      >
         <div className="mx-auto w-full max-w-3xl">
           {/* 欢迎标题：居中时展示，贴底后收起 */}
           <div
             className={`overflow-hidden transition-all duration-500 ease-in-out ${
-              centered ? 'mb-5 max-h-32 opacity-100' : 'max-h-0 opacity-0'
+              centered ? "mb-5 max-h-32 opacity-100" : "max-h-0 opacity-0"
             }`}
           >
             <div className="text-center">
@@ -81,7 +91,10 @@ export function ChatInput({
             </div>
           </div>
           {/* 输入卡片：贴底时预留底部间距，避免贴边 */}
-          <div ref={blockRef} className={centered ? undefined : 'pb-4'}>
+          <div ref={blockRef} className={centered ? undefined : "pb-4"}>
+            {pendingHitl && (
+              <HitlDock pending={pendingHitl} onRespond={respondHitl} />
+            )}
             <div className="chat-input flex min-w-0 flex-col gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 shadow-sm focus-within:border-[var(--border-strong)] focus-within:ring-4 focus-within:ring-[var(--focus-ring)]">
               {hasPending && (
                 <div className="flex flex-wrap gap-2">
@@ -114,24 +127,36 @@ export function ChatInput({
                 placeholder="输入消息，Enter 发送，Shift+Enter 换行"
                 autoSize={{ minRows: 3, maxRows: 8 }}
                 variant="borderless"
+                disabled={busy}
                 styles={{ textarea: { paddingTop: 4, paddingBottom: 4 } }}
                 className="flex-1"
               />
               {/* 底栏：上传在左下角，发送在右下角 */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex gap-2">
-                  <JsonUploadButton />
-                  <GltfUploadButton />
+                  <JsonUploadButton disabled={busy} />
+                  <GltfUploadButton disabled={busy} />
                 </div>
-                <Button
-                  type="primary"
-                  shape="circle"
-                  size="large"
-                  icon={<SendOutlined />}
-                  aria-label="发送"
-                  onClick={submit}
-                  disabled={!text.trim() || streaming}
-                />
+                {busy ? (
+                  <Button
+                    type="primary"
+                    shape="circle"
+                    size="large"
+                    icon={<StopOutlined />}
+                    aria-label="停止"
+                    onClick={stop}
+                  />
+                ) : (
+                  <Button
+                    type="primary"
+                    shape="circle"
+                    size="large"
+                    icon={<SendOutlined />}
+                    aria-label="发送"
+                    onClick={submit}
+                    disabled={!text.trim()}
+                  />
+                )}
               </div>
             </div>
           </div>

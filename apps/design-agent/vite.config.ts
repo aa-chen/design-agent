@@ -50,4 +50,11 @@ export default defineConfig({
       '/dsh': dshProxy,
     },
   },
+  // Vitest reads this; not part of Vite's UserConfig types until vitest is installed.
+  // @ts-expect-error vitest test config
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    setupFiles: ['./src/test/setup.ts'],
+  },
 });

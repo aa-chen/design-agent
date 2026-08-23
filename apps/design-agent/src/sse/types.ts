@@ -28,11 +28,53 @@ export interface ChatMessage {
  * 流式事件协议。后续接入真实后端时按此协议实现传输层；
  * 未来如需「AI 输出 CAD 渲染」，可扩展事件类型 { type: 'cad'; payload: ... }。
  */
+export interface AskUserQuestionOption {
+  label: string;
+  description?: string;
+}
+
+export interface AskUserQuestionItem {
+  id: string;
+  question: string;
+  detail?: string;
+  header?: string;
+  options?: AskUserQuestionOption[];
+  multiSelect?: boolean;
+}
+
 export type StreamEvent =
   | { type: 'start'; messageId: string }
   | { type: 'delta'; text: string }
   | { type: 'done' }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  | {
+      type: 'approval';
+      rpcId: string;
+      sessionId: string;
+      approvalId: string;
+      toolName: string;
+      callId?: string;
+      reason?: string;
+    }
+  | { type: 'question'; rpcId: string; sessionId: string; questions: AskUserQuestionItem[] }
+  | { type: 'hitl-resolved'; kind: 'approval'; approvalId: string }
+  | { type: 'hitl-resolved'; kind: 'question'; rpcId: string };
+
+export type HitlRespondPayload =
+  | {
+      kind: 'approval';
+      rpcId: string;
+      sessionId: string;
+      approvalId: string;
+      outcome: 'allowed-once' | 'rejected';
+    }
+  | {
+      kind: 'question';
+      rpcId: string;
+      sessionId: string;
+      answer: { answers: Array<{ id: string; selected: string[]; custom?: string }> };
+    }
+  | { kind: 'question-cancel'; rpcId: string };
 
 export interface ChatRequest {
   sessionId: string;
@@ -44,4 +86,5 @@ export interface ChatRequest {
 /** 流式客户端接口：切换真实后端时实现同一接口即可 */
 export interface ChatStreamClient {
   stream(req: ChatRequest, signal: AbortSignal): AsyncGenerator<StreamEvent>;
+  respond?(payload: HitlRespondPayload): Promise<{ accepted: boolean; reason?: string }>;
 }
