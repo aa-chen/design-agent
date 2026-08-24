@@ -1,0 +1,14 @@
+{
+  "name": "@do-design/element-cad-event-actor",
+  "version": "1.0.0",
+  "description": "> TODO: description",
+  "author": "zhuxiaomin <zhuxiaomin@goldmantis.com>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "echo skip"
+  },
+  "private": true,
+  "type": "module"
+}

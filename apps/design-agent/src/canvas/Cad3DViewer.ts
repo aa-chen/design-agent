@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { RenderingViewer } from './RenderingViewer';
-import { disposeObjectGroup } from './threeUtils';
+import { disposeObjectGroup, RenderingViewer } from '@da/cad-viewer';
 
 /** 原点坐标轴基准长度（世界单位），fitView 时按模型尺寸缩放 */
 const AXIS_SIZE = 150;

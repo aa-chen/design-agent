@@ -8,7 +8,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { parseCadBundle } from '../../../packages/cad-core/src/bundle';
-import { buildScene } from '../src/canvas/buildScene';
+import { buildScene } from '../../../packages/cad-viewer/src/three/buildScene';
 import * as THREE from 'three';
 
 const bundle = JSON.parse(
