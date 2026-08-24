@@ -1,6 +1,7 @@
 import '../shims/node-globals';
 import { bridgeCadElementRegistry } from './bridgeCadElementRegistry';
-import cadCore from '@do-design/element-cad-core';
+import { resolveCadCoreExports } from './resolveCadCoreExports';
+import * as cadCoreModule from '@do-design/element-cad-core';
 import '@do-design/element-cad-calculator';
 
 let registered = false;
@@ -11,7 +12,7 @@ let registered = false;
  */
 export function registerCadKernel(): void {
   if (registered) return;
-  bridgeCadElementRegistry(cadCore as Record<string, unknown>);
+  bridgeCadElementRegistry(resolveCadCoreExports(cadCoreModule as Record<string, unknown>));
   registered = true;
 }
 

@@ -7,7 +7,7 @@
  */
 
 declare module '@do-design/element-cad-core' {
-  /** Webpack dist：数百个 named export，tsc 仅作 namespace import 占位。 */
+  /** Webpack dist：Vite 下真实导出常在 module.exports。 */
   const cadCoreExports: Record<string, unknown>;
   export = cadCoreExports;
 }
@@ -57,6 +57,10 @@ declare module '@do-design/d-model' {
       file: IDocFile,
       project?: unknown,
     ): Promise<void> | void;
+  }
+
+  export class Document {
+    create<T = unknown>(Ctor: Class<T>): T;
   }
 
   export class DocSaver {

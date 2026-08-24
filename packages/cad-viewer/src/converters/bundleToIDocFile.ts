@@ -75,7 +75,7 @@ function synthesizeBundleParents(bundle: Record<string, unknown>, doc: ElementFi
       matrix: IDENTITY_M4,
       inVisibleFlag: 0,
       uuid: `drawing-${drawingId}`,
-      projectType: 0,
+      projectType: 'none',
     });
   }
 
