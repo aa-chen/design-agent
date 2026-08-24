@@ -78,6 +78,11 @@ export default function CadCanvas() {
     useViewerStore.getState().viewer2d?.setSelected(selectedId);
   }, [selectedId]);
 
+  const has2d = !!model;
+  const has3d = !!gltfScene;
+  const hasAnyModel = has2d || has3d;
+  const showViewSwitch = has2d && has3d;
+
   // 新加载模型时自动切到对应选项卡（仅加载时切换，清空时不强制）
   useEffect(() => {
     if (fileName) setTab('2d');
@@ -85,6 +90,12 @@ export default function CadCanvas() {
   useEffect(() => {
     if (gltfFileName) setTab('3d');
   }, [gltfFileName]);
+
+  // 仅有一种模型时自动切到可用视图
+  useEffect(() => {
+    if (has2d && !has3d) setTab('2d');
+    else if (!has2d && has3d) setTab('3d');
+  }, [has2d, has3d]);
 
   const loadSample = (name: string) => {
     const sample = samples.find((s) => s.name === name);
@@ -97,8 +108,6 @@ export default function CadCanvas() {
     else useViewerStore.getState().viewer3d?.fitView();
   };
   const clear = () => useCadStore.getState().clearModel();
-
-  const hasAnyModel = !!(model || gltfScene);
 
   return (
     <div className="flex h-full flex-col">
@@ -155,28 +164,38 @@ export default function CadCanvas() {
         </div>
       </div>
 
-      {/* 视图选项卡：2D / 3D 渲染器常驻，切换仅控制显隐（保留各自视角状态） */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-[var(--border)] bg-[var(--bg-subtle)] px-3 py-1.5">
-        {(
-          [
-            { key: '2d', label: '2D 视图' },
-            { key: '3d', label: '3D 视图' },
-          ] as const
-        ).map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-              tab === t.key
-                ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-sm'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
+      {/* 2D / 3D 同时存在时显示分段切换；渲染器常驻，切换仅控制显隐 */}
+      {showViewSwitch && (
+        <div className="flex shrink-0 items-center border-b border-[var(--border)] bg-[var(--bg-subtle)] px-3 py-1.5">
+          <div
+            className="inline-flex rounded-md border border-[var(--border)] bg-[var(--bg-muted)] p-0.5"
+            role="tablist"
+            aria-label="视图切换"
           >
-            {t.label}
-          </button>
-        ))}
-      </div>
+            {(
+              [
+                { key: '2d', label: '2D 视图' },
+                { key: '3d', label: '3D 视图' },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={tab === t.key}
+                onClick={() => setTab(t.key)}
+                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                  tab === t.key
+                    ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-sm'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 画布容器：两个渲染器叠放，隐藏的用 visibility 隐藏以保持尺寸（clientWidth 不塌缩） */}
       <div className="relative min-h-0 flex-1 overflow-hidden">

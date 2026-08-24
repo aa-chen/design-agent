@@ -5,3 +5,5 @@ dist/
 .DS_Store
 *.log
 .superpowers/
+.worktrees/
+.pnpm-store/
