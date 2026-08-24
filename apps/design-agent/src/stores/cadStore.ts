@@ -13,6 +13,8 @@ interface CadState {
   /** GLTF/GLB 解析后的 3D 场景（瞬态引用，不持久化） */
   gltfScene: Group | null;
   gltfFileName: string | null;
+  /** IDoc / bundle 原始 JSON，画布打开后交给 CadViewer.load */
+  idocPayload: unknown | null;
   /** 输入框内待发送的 JSON 附件名（发送后清空，模型仍保留） */
   pendingJson: string | null;
   /** 输入框内待发送的 GLB 附件名 */
@@ -22,7 +24,11 @@ interface CadState {
   /** 右侧画布面板是否展开（上传不打开，首次发消息才打开） */
   canvasOpen: boolean;
   setModel: (model: CadModel, fileName: string, opts?: { pending?: boolean }) => void;
-  setDocMeta: (fileName: string, opts?: { pending?: boolean; elementCount?: number }) => void;
+  setDocMeta: (
+    fileName: string,
+    opts?: { pending?: boolean; elementCount?: number },
+    payload?: unknown,
+  ) => void;
   setGltf: (scene: Group, fileName: string, opts?: { pending?: boolean }) => void;
   /** 删除输入区 JSON 芯片：连带清除已加载的 2D 模型 */
   clearPendingJson: () => void;
@@ -56,6 +62,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   docElementCount: null,
   gltfScene: null,
   gltfFileName: null,
+  idocPayload: null,
   pendingJson: null,
   pendingGltf: null,
   selectedId: null,
@@ -66,15 +73,17 @@ export const useCadStore = create<CadState>((set, get) => ({
       fileName,
       format: 'cad-model',
       docElementCount: null,
+      idocPayload: null,
       selectedId: null,
       ...(opts?.pending ? { pendingJson: fileName } : {}),
     }),
-  setDocMeta: (fileName, opts) =>
+  setDocMeta: (fileName, opts, payload) =>
     set({
       model: null,
       fileName,
       format: 'idoc',
       docElementCount: opts?.elementCount ?? null,
+      idocPayload: payload ?? null,
       selectedId: null,
       ...(opts?.pending ? { pendingJson: fileName } : {}),
     }),
@@ -92,6 +101,7 @@ export const useCadStore = create<CadState>((set, get) => ({
       fileName: null,
       format: null,
       docElementCount: null,
+      idocPayload: null,
       pendingJson: null,
       selectedId: null,
       canvasOpen: canvasOpenAfterClear(canvasOpen, { model: null, gltfScene }),
@@ -114,6 +124,7 @@ export const useCadStore = create<CadState>((set, get) => ({
       fileName: null,
       format: null,
       docElementCount: null,
+      idocPayload: null,
       gltfScene: null,
       gltfFileName: null,
       pendingJson: null,

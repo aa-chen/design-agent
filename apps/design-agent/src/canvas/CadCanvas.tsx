@@ -1,7 +1,7 @@
 import { samples } from '@da/cad-core';
 import { CadViewer } from '@da/cad-viewer';
 import { CloseOutlined } from '@ant-design/icons';
-import { Button, Select, Tag, Tooltip } from '@da/ui';
+import { Button, Select, Tag, Tooltip, useMessage } from '@da/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useCadStore } from '../stores/cadStore';
 import { useThemeStore } from '../stores/themeStore';
@@ -18,12 +18,14 @@ export default function CadCanvas() {
   const model = useCadStore((s) => s.model);
   const fileName = useCadStore((s) => s.fileName);
   const format = useCadStore((s) => s.format);
+  const idocPayload = useCadStore((s) => s.idocPayload);
   const gltfScene = useCadStore((s) => s.gltfScene);
   const gltfFileName = useCadStore((s) => s.gltfFileName);
   const selectedId = useCadStore((s) => s.selectedId);
   const select = useCadStore((s) => s.select);
   const [tab, setTab] = useState<ViewTab>('2d');
   const themeMode = useThemeStore((s) => s.mode);
+  const message = useMessage();
 
   // 主题切换时同步 3D/2D 场景背景色
   useEffect(() => {
@@ -50,19 +52,27 @@ export default function CadCanvas() {
     };
   }, [select]);
 
-  // 2D 模型变化 -> 重建 2D 场景 + 适配视图（idoc 由 upload 直接写入 viewer，勿 clear）
+  // 2D：IDoc/bundle → @do-design；CadModel → Three
   useEffect(() => {
     const viewer = useViewerStore.getState().viewer2d;
     if (!viewer) return;
+    if (format === 'idoc' && idocPayload) {
+      void viewer.load(idocPayload).then((r) => {
+        if (r.ok) viewer.fitView();
+        else message.error(r.error);
+      });
+      return;
+    }
     if (format === 'idoc') return;
     if (model) {
       void viewer.load(model).then((r) => {
         if (r.ok) viewer.fitView();
+        else message.error(r.error);
       });
     } else {
       viewer.clear();
     }
-  }, [model, format]);
+  }, [model, format, idocPayload, message]);
 
   // 3D 模型变化 -> 重建 3D 场景 + 适配视图
   useEffect(() => {

@@ -1,1 +1,0 @@
-import './cad_mini_drawing_event_actor';

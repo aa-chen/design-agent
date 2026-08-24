@@ -1,4 +1,4 @@
-import { parseCadModel } from '@da/cad-core';
+import { isCadBundle, parseCadModel } from '@da/cad-core';
 import { UploadOutlined } from '@ant-design/icons';
 import { Button, useMessage } from '@da/ui';
 import { useRef } from 'react';
@@ -29,8 +29,20 @@ export default function JsonUploadButton({ disabled = false }: { disabled?: bool
     }
 
     const viewer = useViewerStore.getState().viewer2d;
+    const isIdocLike =
+      isCadBundle(json) ||
+      (typeof json === 'object' &&
+        json !== null &&
+        (json as { fileExtension?: string }).fileExtension === 'pm' &&
+        Array.isArray((json as { doc?: unknown[] }).doc));
+
     if (!viewer) {
-      // 画布未打开：CadModel 可先写入 store，发消息打开画布后再渲染；IDoc 必须已有 viewer
+      if (isIdocLike) {
+        useCadStore.getState().setDocMeta(file.name, { pending: true }, json);
+        useCadStore.getState().openCanvas();
+        message.success(`已加载 ${file.name}（idoc / bundle）`);
+        return;
+      }
       const parsed = parseCadModel(json);
       if (parsed.ok) {
         useCadStore.getState().setModel(parsed.data, file.name, { pending: true });
@@ -50,10 +62,12 @@ export default function JsonUploadButton({ disabled = false }: { disabled?: bool
       const parsed = parseCadModel(json);
       if (parsed.ok) useCadStore.getState().setModel(parsed.data, file.name, { pending: true });
     } else {
-      useCadStore.getState().setDocMeta(file.name, {
-        pending: true,
-        elementCount: result.meta.elementCount,
-      });
+      useCadStore.getState().setDocMeta(
+        file.name,
+        { pending: true, elementCount: result.meta.elementCount },
+        json,
+      );
+      useCadStore.getState().openCanvas();
     }
     viewer.fitView();
     message.success(`已加载 ${file.name}（${result.format}）`);

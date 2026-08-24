@@ -44,6 +44,17 @@ describe('detectFormat', () => {
     ).toBe('idoc');
   });
 
+  it('detects cloud bundle as idoc (@do-design path)', () => {
+    expect(
+      detectFormat({
+        drawingId: 1,
+        viewTag: 'v',
+        view: { _ctor_: 'CadView', id: { id: 1 } },
+        geometry: [{ id: 2, ctor: 'CadLines', raw: { _ctor_: 'CadLines', id: { id: 2 } } }],
+      }),
+    ).toBe('idoc');
+  });
+
   it('returns unknown for empty object', () => {
     expect(detectFormat({})).toBe('unknown');
   });

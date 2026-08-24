@@ -7,9 +7,7 @@
       "@do-design/d-model": ["./src/shims/do-design.d.ts"],
       "@do-design/d-render": ["./src/shims/do-design.d.ts"],
       "@do-design/element-cad-core": ["./src/shims/do-design.d.ts"],
-      "@do-design/element-cad-calculator": ["./src/shims/do-design.d.ts"],
-      "@do-design/element-cad-event-actor": ["./src/shims/do-design.d.ts"],
-      "@do-design/element-cad-camera-helper": ["./src/shims/do-design.d.ts"]
+      "@do-design/element-cad-calculator": ["./src/shims/do-design.d.ts"]
     }
   },
   "include": ["src"]

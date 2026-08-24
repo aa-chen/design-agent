@@ -1,6 +1,7 @@
-import { parseCadModel, type CadModel } from '@da/cad-core';
+import { isCadBundle, parseCadModel, type CadModel } from '@da/cad-core';
 import { CadModelBackend } from './backends/CadModelBackend';
 import type { DocBackend } from './backends/DocBackend';
+import { bundleToIDocFile } from './converters/bundleToIDocFile';
 import { detectFormat } from './detectFormat';
 import { parseInput } from './parseInput';
 import type { LoadResult, ViewerMeta } from './types';
@@ -51,6 +52,7 @@ export class CadViewer {
           });
         }
         await this.docBackend.loadJson(parsed.json);
+        this.docBackend.fitView();
       } catch (e) {
         return {
           ok: false,
@@ -58,14 +60,16 @@ export class CadViewer {
         };
       }
       this.active = 'idoc';
-      const docArr = (parsed.json as { doc?: unknown[] }).doc;
+      const elementCount = isCadBundle(parsed.json)
+        ? bundleToIDocFile(parsed.json).doc.length
+        : (parsed.json as { doc?: unknown[] }).doc?.length;
       return {
         ok: true,
         format: 'idoc',
         meta: {
           format: 'idoc',
           fileName: parsed.fileName,
-          elementCount: Array.isArray(docArr) ? docArr.length : undefined,
+          elementCount: elementCount ?? undefined,
         },
       };
     }

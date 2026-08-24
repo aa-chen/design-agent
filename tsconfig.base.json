@@ -21,9 +21,7 @@
       "@do-design/d-model": ["./packages/cad-viewer/src/shims/do-design.d.ts"],
       "@do-design/d-render": ["./packages/cad-viewer/src/shims/do-design.d.ts"],
       "@do-design/element-cad-core": ["./packages/cad-viewer/src/shims/do-design.d.ts"],
-      "@do-design/element-cad-calculator": ["./packages/cad-viewer/src/shims/do-design.d.ts"],
-      "@do-design/element-cad-event-actor": ["./packages/cad-viewer/src/shims/do-design.d.ts"],
-      "@do-design/element-cad-camera-helper": ["./packages/cad-viewer/src/shims/do-design.d.ts"]
+      "@do-design/element-cad-calculator": ["./packages/cad-viewer/src/shims/do-design.d.ts"]
     }
   }
 }

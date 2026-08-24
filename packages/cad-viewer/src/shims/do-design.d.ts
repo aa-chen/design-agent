@@ -6,15 +6,17 @@
  * node_modules at runtime — these paths are tsconfig-only.
  */
 
-declare module '@do-design/element-cad-core' {}
+declare module '@do-design/element-cad-core' {
+  /** Webpack dist：数百个 named export，tsc 仅作 namespace import 占位。 */
+  const cadCoreExports: Record<string, unknown>;
+  export = cadCoreExports;
+}
 
 declare module '@do-design/element-cad-calculator' {}
 
-declare module '@do-design/element-cad-event-actor' {}
-
-declare module '@do-design/element-cad-camera-helper' {}
-
 declare module '@do-design/d-model' {
+  export type Class<T = any> = new (...args: any[]) => T;
+
   // Minimal any-friendly stubs for Task 6 DocBackend.
   export interface IApp {
     start(): Promise<void> | void;
@@ -30,6 +32,7 @@ declare module '@do-design/d-model' {
   export interface ISysWindow {
     getDocument(): IDocument;
     getRenderView?(): any;
+    getSize?(): { x: number; y: number };
   }
 
   export interface IDocument {
@@ -56,6 +59,11 @@ declare module '@do-design/d-model' {
     ): Promise<void> | void;
   }
 
+  export class DocSaver {
+    constructor(doc: IDocument);
+    load(file: IDocFile, project?: unknown): Promise<boolean>;
+  }
+
   export const FileUtil: {
     parse(str: string): IDocFile | undefined;
   };
@@ -63,6 +71,15 @@ declare module '@do-design/d-model' {
   export const JsonUtil: {
     stringify(json: unknown): string;
   };
+
+  export function elementMeta(
+    classNameInFile: string,
+    ElementDBClass: Class,
+    save?: boolean,
+    saveLevel?: number,
+  ): (decoratedClass: Class) => void;
+
+  export function getClassByName<T = Class>(name: string): T | undefined;
 }
 
 declare module '@do-design/d-render' {

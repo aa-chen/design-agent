@@ -1,6 +1,7 @@
+import { isCadBundle } from '@da/cad-core';
 import {
   createApp,
-  DocumentManager,
+  DocSaver,
   FileUtil,
   JsonUtil,
   type IApp,
@@ -8,6 +9,7 @@ import {
   type ISysWindow,
 } from '@do-design/d-model';
 import { EN_RENDER_TYPE } from '@do-design/d-render';
+import { bundleFitExtents, bundleToIDocFile, type FitExtents } from '../converters/bundleToIDocFile';
 
 export type DocBackendOptions = {
   container: HTMLElement;
@@ -23,6 +25,7 @@ export class DocBackend {
   private app: IApp | null = null;
   private view: ISysWindow | null = null;
   private started = false;
+  private fitExtents: FitExtents | null = null;
 
   constructor(options: DocBackendOptions) {
     this.container = options.container;
@@ -54,9 +57,13 @@ export class DocBackend {
     await this.ensureStarted();
     if (!this.view) throw new Error('DocBackend view 未创建');
 
+    this.fitExtents = isCadBundle(json) ? bundleFitExtents(json) : null;
+
     let docFile: IDocFile | undefined;
     if (typeof json === 'string') {
       docFile = FileUtil.parse(json);
+    } else if (isCadBundle(json)) {
+      docFile = bundleToIDocFile(json);
     } else {
       const packedOrObj = json as IDocFile;
       if (packedOrObj.fileExtension === 'pm' && Array.isArray(packedOrObj.doc)) {
@@ -70,13 +77,44 @@ export class DocBackend {
     }
 
     const doc = this.view.getDocument();
-    await DocumentManager.getInstance().loadDoc(doc, docFile);
+    const saver = new DocSaver(doc);
+    const ok = await saver.load(docFile);
+    if (!ok) {
+      throw new Error('图纸反序列化或重算失败（见浏览器控制台）');
+    }
     doc.updateView();
+
+    const renderView = this.view.getRenderView?.();
+    if (renderView) {
+      const w = this.container.clientWidth || 1;
+      const h = this.container.clientHeight || 1;
+      renderView.onResize(w, h);
+      renderView.render();
+    }
   }
 
   fitView(): void {
-    const renderView = this.view?.getRenderView?.();
-    void renderView;
+    if (!this.view) return;
+    const renderView = this.view.getRenderView?.();
+    if (!renderView || !this.fitExtents) return;
+
+    const size = this.view.getSize?.();
+    const viewW = size?.x ?? this.container.clientWidth ?? 1;
+    const viewH = size?.y ?? this.container.clientHeight ?? 1;
+    const { minX, minY, maxX, maxY } = this.fitExtents;
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const extW = Math.max(maxX - minX, 1);
+    const extH = Math.max(maxY - minY, 1);
+    const zoom = Math.min(viewW / extW, viewH / extH) * 0.85;
+
+    renderView.resetViewDirection(
+      { x: cx, y: cy, z: 1 },
+      { x: cx, y: cy, z: 0 },
+      { x: 0, y: 1, z: 0 },
+      zoom,
+    );
+    renderView.render();
   }
 
   setSelection(_id: string | null): void {}
@@ -94,5 +132,6 @@ export class DocBackend {
     this.view = null;
     this.app = null;
     this.started = false;
+    this.fitExtents = null;
   }
 }
