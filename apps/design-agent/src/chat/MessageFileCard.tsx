@@ -8,6 +8,7 @@ export function MessageFileCard({ attachment }: { attachment: ChatAttachment }) 
     const cad = useCadStore.getState();
     if (attachment.kind === 'json' && attachment.model) {
       cad.setModel(attachment.model, attachment.name, { pending: false });
+      return;
     }
     cad.openCanvas();
   };
@@ -21,7 +22,7 @@ export function MessageFileCard({ attachment }: { attachment: ChatAttachment }) 
       <FileOutlined className="text-[var(--text-secondary)]" />
       <span className="min-w-0 truncate font-medium">{attachment.name}</span>
       <span className="shrink-0 text-[var(--text-muted)]">
-        {attachment.kind === 'json' ? 'JSON' : 'GLB'} · 打开画布
+        {attachment.kind === 'json' ? 'JSON' : 'GLB · 打开画布'}
       </span>
     </button>
   );

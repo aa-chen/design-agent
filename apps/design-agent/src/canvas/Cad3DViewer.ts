@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { disposeObjectGroup, RenderingViewer } from '@da/cad-viewer';
+import { RenderingViewer } from './RenderingViewer';
+import { disposeObjectGroup } from './threeUtils';
 
 /** 原点坐标轴基准长度（世界单位），fitView 时按模型尺寸缩放 */
 const AXIS_SIZE = 150;
 
 /**
  * 3D 渲染器：GLTF/GLB 模型。
- * 透视相机 + 轨道控制（旋转/平移/缩放）+ 光照 + 原点坐标轴；2D CAD 渲染见 Cad2DViewer。
+ * 透视相机 + 轨道控制（旋转/平移/缩放）+ 光照 + 原点坐标轴。
  * 命令式生命周期，由 React 组件挂载/销毁。
  */
 export class Cad3DViewer extends RenderingViewer {
@@ -30,13 +31,11 @@ export class Cad3DViewer extends RenderingViewer {
     this.orbitControls.enableDamping = false;
     this.orbitControls.addEventListener('change', () => this.requestRender());
 
-    // 网格材质需要光源
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
     const dir = new THREE.DirectionalLight(0xffffff, 1.4);
     dir.position.set(200, 300, 400);
     this.scene.add(dir);
 
-    // 原点坐标轴（红 X / 绿 Y / 蓝 Z）
     this.axes = new THREE.AxesHelper(AXIS_SIZE);
     this.scene.add(this.axes);
 
@@ -81,7 +80,6 @@ export class Cad3DViewer extends RenderingViewer {
       .addScaledVector(new THREE.Vector3(1, 0.7, 1).normalize(), dist);
     this.orbitControls.target.copy(center);
     this.orbitControls.update();
-    // 坐标轴长度约为包围球半径的 0.8 倍（随模型尺寸缩放）
     this.axes.scale.setScalar(((sphere.radius * 0.8) / AXIS_SIZE) || 1);
     this.requestRender();
   }

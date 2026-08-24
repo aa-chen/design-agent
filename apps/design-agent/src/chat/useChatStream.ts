@@ -66,8 +66,8 @@ export function useSendMessage() {
     const cad = useCadStore.getState();
     cad.consumePendingAttachments();
 
-    // 首次发消息且已有模型时再打开右侧画布（上传本身不弹出）
-    if (!cad.canvasOpen && (cad.model || cad.gltfScene || cad.format === 'idoc')) {
+    // 首次发消息且已有 3D 模型时再打开右侧画布（上传本身不弹出）
+    if (!cad.canvasOpen && cad.gltfScene) {
       useCadStore.getState().openCanvas();
     }
 

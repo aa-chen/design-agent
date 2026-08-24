@@ -65,7 +65,7 @@ function matrixTranslation(m?: BundleMatrix): [number, number] {
 
 /**
  * 图层名归一化：导出端图层名（"0"、虚线、双点划线、中心线、JEE-DIM标注…）
- * 映射为内部语义图层名，供 buildScene 配色/线型使用。
+ * 映射为内部语义图层名，供导出与后续渲染配色/线型使用。
  */
 export function normalizeLayer(name: string | undefined): string | undefined {
   if (!name) return undefined;

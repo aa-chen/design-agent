@@ -1,13 +1,11 @@
 import * as THREE from 'three';
 
-/** 场景背景色默认值（2D / 3D 共用，运行时可通过 setBackground 覆盖） */
+/** 场景背景色默认值（运行时可通过 setBackground 覆盖） */
 const DEFAULT_SCENE_BACKGROUND = '#fafafa';
 
 /**
  * 渲染器公共基类：负责 WebGLRenderer 创建、rAF 渲染循环、窗口 resize 与销毁。
- * 相机、场景内容与交互由 2D / 3D 子类各自实现：
- * - Cad2DViewer：正交俯视 2D 图纸（缩放/拾取）
- * - Cad3DViewer：透视 3D 模型（轨道控制/光照）
+ * 相机、场景内容与交互由子类实现（当前为 Cad3DViewer）。
  */
 export abstract class RenderingViewer {
   protected readonly container: HTMLElement;
@@ -40,7 +38,7 @@ export abstract class RenderingViewer {
     this.requestRender();
   }
 
-  /** 容器尺寸变化时更新相机投影（透视更新 aspect；正交重算视锥） */
+  /** 容器尺寸变化时更新相机投影 */
   protected abstract updateCameraForSize(w: number, h: number): void;
 
   /** 标记下一帧需要重绘（交互/模型变化时调用） */

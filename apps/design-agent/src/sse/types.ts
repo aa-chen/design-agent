@@ -7,7 +7,7 @@ export interface ChatAttachment {
   id: string;
   name: string;
   kind: 'json' | 'glb';
-  /** JSON 模型快照，点击卡片时可恢复到画布 */
+  /** JSON 模型快照，点击卡片时可恢复到对话上下文 */
   model?: CadModel;
 }
 
@@ -79,7 +79,7 @@ export type HitlRespondPayload =
 export interface ChatRequest {
   sessionId: string;
   messages: ChatMessage[];
-  /** 当前画布已加载的 CAD 模型（供 AI 上下文参考） */
+  /** 当前已加载的 CAD 模型（供 AI 上下文参考） */
   model: CadModel | null;
 }
 

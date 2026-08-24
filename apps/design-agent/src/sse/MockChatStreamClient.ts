@@ -14,7 +14,7 @@ function buildReply(model: CadModel | null): string {
       `- 标注：**${model.annotations.length}** 个`,
       `- 零件分组：**${model.parts.length}** 个`,
       '',
-      '已在右侧画布渲染该模型的 CAD 图形。你可以滚轮缩放、拖拽平移、点击几何元素查看属性。',
+      '该 JSON 已作为附件加入对话上下文。3D 模型请上传 GLB 后在右侧画布查看。',
       '',
       '> 当前为 Mock 流式输出，接入真实后端后在此返回真实的 AI 回复。',
     ].join('\n');
@@ -22,7 +22,7 @@ function buildReply(model: CadModel | null): string {
   return [
     '你好！我是 **Design Agent**。',
     '',
-    '请上传一个包含零件信息或标注信息的 JSON 文件，我可以在右侧画布中为你渲染 CAD 图形；也可以直接向我提问。',
+    '请上传零件 JSON（作为对话上下文）或 GLB（在右侧画布查看）；也可以直接向我提问。',
     '',
     '支持的几何元素：`line` / `polyline` / `circle` / `arc` / `rect` / `text`，以及 `dimension` 尺寸标注。',
   ].join('\n');

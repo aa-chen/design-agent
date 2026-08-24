@@ -6,7 +6,7 @@ import { isCadBundle, parseCadBundle, parseCadModel } from '../src';
 const bundlePath = resolve(__dirname, '../../../examples/KxBV6LDd.bundle.json');
 const bundleJson = JSON.parse(readFileSync(bundlePath, 'utf8')) as unknown;
 
-/** 与 buildScene 一致：采样圆弧上的点（大半径圆弧的圆心可能在视图外） */
+/** 采样圆弧上的点（大半径圆弧的圆心可能在视图外） */
 function sampleArc(el: { center: number[]; radius: number; startAngle: number; endAngle: number }) {
   const pts: number[][] = [];
   for (let i = 0; i <= 8; i++) {

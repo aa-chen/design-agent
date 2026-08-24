@@ -1,11 +1,10 @@
-import { isCadBundle, parseCadModel } from '@da/cad-core';
+import { parseCadModel } from '@da/cad-core';
 import { UploadOutlined } from '@ant-design/icons';
 import { Button, useMessage } from '@da/ui';
 import { useRef } from 'react';
 import { useCadStore } from '../stores/cadStore';
-import { useViewerStore } from '../stores/viewerStore';
 
-/** 上传 JSON → CadViewer 识别格式 → 写入 cadStore（画布据此展示） */
+/** 上传 JSON → 解析为 CadModel，作为聊天附件（当前不在画布渲染） */
 export default function JsonUploadButton({ disabled = false }: { disabled?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const message = useMessage();
@@ -28,49 +27,13 @@ export default function JsonUploadButton({ disabled = false }: { disabled?: bool
       return;
     }
 
-    const viewer = useViewerStore.getState().viewer2d;
-    const isIdocLike =
-      isCadBundle(json) ||
-      (typeof json === 'object' &&
-        json !== null &&
-        (json as { fileExtension?: string }).fileExtension === 'pm' &&
-        Array.isArray((json as { doc?: unknown[] }).doc));
-
-    if (!viewer) {
-      if (isIdocLike) {
-        useCadStore.getState().setDocMeta(file.name, { pending: true }, json);
-        useCadStore.getState().openCanvas();
-        message.success(`已加载 ${file.name}（idoc / bundle）`);
-        return;
-      }
-      const parsed = parseCadModel(json);
-      if (parsed.ok) {
-        useCadStore.getState().setModel(parsed.data, file.name, { pending: true });
-        message.success(`已加载 ${file.name}（cad-model）`);
-        return;
-      }
-      message.error('画布未就绪');
+    const parsed = parseCadModel(json);
+    if (!parsed.ok) {
+      message.error(parsed.errors[0] ?? '无法识别该 JSON');
       return;
     }
-
-    const result = await viewer.load(json);
-    if (!result.ok) {
-      message.error(result.error);
-      return;
-    }
-    if (result.format === 'cad-model') {
-      const parsed = parseCadModel(json);
-      if (parsed.ok) useCadStore.getState().setModel(parsed.data, file.name, { pending: true });
-    } else {
-      useCadStore.getState().setDocMeta(
-        file.name,
-        { pending: true, elementCount: result.meta.elementCount },
-        json,
-      );
-      useCadStore.getState().openCanvas();
-    }
-    viewer.fitView();
-    message.success(`已加载 ${file.name}（${result.format}）`);
+    useCadStore.getState().setModel(parsed.data, file.name, { pending: true });
+    message.success(`已附加 ${file.name}`);
   };
 
   return (

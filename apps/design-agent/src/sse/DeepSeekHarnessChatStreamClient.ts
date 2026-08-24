@@ -65,7 +65,7 @@ function latestUserText(messages: ChatMessage[]): string {
 function cadContextText(model: CadModel | null): string | null {
   if (!model) return null;
   return [
-    '[CAD 画布上下文]',
+        '[CAD 模型上下文]',
     `模型名称：${model.name}`,
     `单位：${model.unit ?? 'mm'}`,
     `几何元素：${model.elements.length}`,
