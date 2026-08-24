@@ -6,6 +6,10 @@ interface CadState {
   /** 当前已加载并校验通过的 CAD 模型（2D 图纸） */
   model: CadModel | null;
   fileName: string | null;
+  /** 当前 2D 图纸格式；无图纸时为 null */
+  format: 'idoc' | 'cad-model' | null;
+  /** IDoc 元素数量（仅 format === 'idoc' 时有意义） */
+  docElementCount: number | null;
   /** GLTF/GLB 解析后的 3D 场景（瞬态引用，不持久化） */
   gltfScene: Group | null;
   gltfFileName: string | null;
@@ -18,6 +22,7 @@ interface CadState {
   /** 右侧画布面板是否展开（上传不打开，首次发消息才打开） */
   canvasOpen: boolean;
   setModel: (model: CadModel, fileName: string, opts?: { pending?: boolean }) => void;
+  setDocMeta: (fileName: string, opts?: { pending?: boolean; elementCount?: number }) => void;
   setGltf: (scene: Group, fileName: string, opts?: { pending?: boolean }) => void;
   /** 删除输入区 JSON 芯片：连带清除已加载的 2D 模型 */
   clearPendingJson: () => void;
@@ -33,9 +38,13 @@ interface CadState {
 
 function canvasOpenAfterClear(
   canvasOpen: boolean,
-  remaining: { model: CadModel | null; gltfScene: Group | null },
+  remaining: {
+    model: CadModel | null;
+    gltfScene: Group | null;
+    format?: 'idoc' | 'cad-model' | null;
+  },
 ) {
-  if (remaining.model || remaining.gltfScene) return canvasOpen;
+  if (remaining.model || remaining.gltfScene || remaining.format === 'idoc') return canvasOpen;
   return false;
 }
 
@@ -43,6 +52,8 @@ function canvasOpenAfterClear(
 export const useCadStore = create<CadState>((set, get) => ({
   model: null,
   fileName: null,
+  format: null,
+  docElementCount: null,
   gltfScene: null,
   gltfFileName: null,
   pendingJson: null,
@@ -53,6 +64,17 @@ export const useCadStore = create<CadState>((set, get) => ({
     set({
       model,
       fileName,
+      format: 'cad-model',
+      docElementCount: null,
+      selectedId: null,
+      ...(opts?.pending ? { pendingJson: fileName } : {}),
+    }),
+  setDocMeta: (fileName, opts) =>
+    set({
+      model: null,
+      fileName,
+      format: 'idoc',
+      docElementCount: opts?.elementCount ?? null,
       selectedId: null,
       ...(opts?.pending ? { pendingJson: fileName } : {}),
     }),
@@ -68,19 +90,21 @@ export const useCadStore = create<CadState>((set, get) => ({
     set({
       model: null,
       fileName: null,
+      format: null,
+      docElementCount: null,
       pendingJson: null,
       selectedId: null,
       canvasOpen: canvasOpenAfterClear(canvasOpen, { model: null, gltfScene }),
     });
   },
   clearPendingGltf: () => {
-    const { model, canvasOpen } = get();
+    const { model, canvasOpen, format } = get();
     set({
       gltfScene: null,
       gltfFileName: null,
       pendingGltf: null,
       selectedId: null,
-      canvasOpen: canvasOpenAfterClear(canvasOpen, { model, gltfScene: null }),
+      canvasOpen: canvasOpenAfterClear(canvasOpen, { model, gltfScene: null, format }),
     });
   },
   consumePendingAttachments: () => set({ pendingJson: null, pendingGltf: null }),
@@ -88,6 +112,8 @@ export const useCadStore = create<CadState>((set, get) => ({
     set({
       model: null,
       fileName: null,
+      format: null,
+      docElementCount: null,
       gltfScene: null,
       gltfFileName: null,
       pendingJson: null,

@@ -1,14 +1,14 @@
+import type { CadViewer } from '@da/cad-viewer';
 import { create } from 'zustand';
-import type { Cad2DViewer } from '../canvas/Cad2DViewer';
 import type { Cad3DViewer } from '../canvas/Cad3DViewer';
 
 interface ViewerState {
   /** 2D 渲染器实例（瞬态引用，不持久化） */
-  viewer2d: Cad2DViewer | null;
+  viewer2d: CadViewer | null;
   /** 3D 渲染器实例（瞬态引用，不持久化） */
   viewer3d: Cad3DViewer | null;
-  register2d: (viewer: Cad2DViewer) => void;
-  unregister2d: (viewer: Cad2DViewer) => void;
+  register2d: (viewer: CadViewer) => void;
+  unregister2d: (viewer: CadViewer) => void;
   register3d: (viewer: Cad3DViewer) => void;
   unregister3d: (viewer: Cad3DViewer) => void;
 }

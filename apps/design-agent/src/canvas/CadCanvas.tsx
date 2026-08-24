@@ -1,11 +1,11 @@
 import { samples } from '@da/cad-core';
+import { CadViewer } from '@da/cad-viewer';
 import { CloseOutlined } from '@ant-design/icons';
 import { Button, Select, Tag, Tooltip } from '@da/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useCadStore } from '../stores/cadStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useViewerStore } from '../stores/viewerStore';
-import { Cad2DViewer } from './Cad2DViewer';
 import { Cad3DViewer } from './Cad3DViewer';
 import PropertyPanel from './PropertyPanel';
 
@@ -17,6 +17,7 @@ export default function CadCanvas() {
   const container3dRef = useRef<HTMLDivElement>(null);
   const model = useCadStore((s) => s.model);
   const fileName = useCadStore((s) => s.fileName);
+  const format = useCadStore((s) => s.format);
   const gltfScene = useCadStore((s) => s.gltfScene);
   const gltfFileName = useCadStore((s) => s.gltfFileName);
   const selectedId = useCadStore((s) => s.selectedId);
@@ -37,7 +38,7 @@ export default function CadCanvas() {
     const el2d = container2dRef.current;
     const el3d = container3dRef.current;
     if (!el2d || !el3d) return;
-    const viewer2d = new Cad2DViewer({ container: el2d, onSelect: (id) => select(id) });
+    const viewer2d = new CadViewer({ container: el2d, onSelect: (id) => select(id) });
     const viewer3d = new Cad3DViewer(el3d);
     useViewerStore.getState().register2d(viewer2d);
     useViewerStore.getState().register3d(viewer3d);
@@ -49,17 +50,19 @@ export default function CadCanvas() {
     };
   }, [select]);
 
-  // 2D 模型变化 -> 重建 2D 场景 + 适配视图
+  // 2D 模型变化 -> 重建 2D 场景 + 适配视图（idoc 由 upload 直接写入 viewer，勿 clear）
   useEffect(() => {
     const viewer = useViewerStore.getState().viewer2d;
     if (!viewer) return;
+    if (format === 'idoc') return;
     if (model) {
-      viewer.setModel(model);
-      viewer.fitView();
+      void viewer.load(model).then((r) => {
+        if (r.ok) viewer.fitView();
+      });
     } else {
-      viewer.clearModel();
+      viewer.clear();
     }
-  }, [model]);
+  }, [model, format]);
 
   // 3D 模型变化 -> 重建 3D 场景 + 适配视图
   useEffect(() => {
@@ -75,10 +78,10 @@ export default function CadCanvas() {
 
   // 选中变化 -> 2D 高亮
   useEffect(() => {
-    useViewerStore.getState().viewer2d?.setSelected(selectedId);
+    useViewerStore.getState().viewer2d?.setSelection(selectedId);
   }, [selectedId]);
 
-  const has2d = !!model;
+  const has2d = !!fileName;
   const has3d = !!gltfScene;
   const hasAnyModel = has2d || has3d;
   const showViewSwitch = has2d && has3d;
@@ -101,13 +104,15 @@ export default function CadCanvas() {
     const sample = samples.find((s) => s.name === name);
     if (!sample) return;
     useCadStore.getState().setModel(sample, `${sample.name}.json`);
-    useViewerStore.getState().viewer2d?.fitView();
   };
   const fitView = () => {
     if (tab === '2d') useViewerStore.getState().viewer2d?.fitView();
     else useViewerStore.getState().viewer3d?.fitView();
   };
-  const clear = () => useCadStore.getState().clearModel();
+  const clear = () => {
+    useViewerStore.getState().viewer2d?.clear();
+    useCadStore.getState().clearModel();
+  };
 
   return (
     <div className="flex h-full flex-col">

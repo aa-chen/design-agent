@@ -37,7 +37,22 @@ export default defineConfig({
         import.meta.dirname,
         '../../packages/cad-core/src/index.ts',
       ),
+      '@da/cad-viewer': path.resolve(
+        import.meta.dirname,
+        '../../packages/cad-viewer/src/index.ts',
+      ),
     },
+  },
+  optimizeDeps: {
+    include: ['three'],
+    exclude: [
+      '@do-design/d-model',
+      '@do-design/d-render',
+      '@do-design/element-cad-core',
+      '@do-design/element-cad-calculator',
+      '@do-design/d-net-common',
+      '@do-design/client-server',
+    ],
   },
   server: {
     port: 5173,

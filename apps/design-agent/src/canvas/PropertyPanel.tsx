@@ -81,11 +81,21 @@ function findTarget(model: CadModel, id: string): { kind: string; rows: Row[] } 
 /** 选中元素/标注的属性面板（画布底部） */
 export default function PropertyPanel() {
   const model = useCadStore((s) => s.model);
+  const format = useCadStore((s) => s.format);
   const selectedId = useCadStore((s) => s.selectedId);
   const select = useCadStore((s) => s.select);
 
-  if (!model || !selectedId) return null;
-  const target = findTarget(model, selectedId);
+  if (!selectedId) return null;
+
+  let target: { kind: string; rows: Row[] } | null = null;
+  if (format === 'idoc') {
+    target = {
+      kind: '工程图元素（只读）',
+      rows: [{ label: 'id', value: selectedId }],
+    };
+  } else if (model) {
+    target = findTarget(model, selectedId);
+  }
   if (!target) return null;
 
   return (

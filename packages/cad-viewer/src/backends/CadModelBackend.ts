@@ -1,10 +1,10 @@
 import type { CadModel } from '@da/cad-core';
 import * as THREE from 'three';
-import { buildScene, HIGHLIGHT_COLOR } from './buildScene';
-import { RenderingViewer } from './RenderingViewer';
-import { disposeObjectGroup } from './threeUtils';
+import { buildScene, HIGHLIGHT_COLOR } from '../three/buildScene';
+import { RenderingViewer } from '../three/RenderingViewer';
+import { disposeObjectGroup } from '../three/threeUtils';
 
-export interface Cad2DViewerOptions {
+export interface CadModelBackendOptions {
   container: HTMLElement;
   /** 拾取结果回调：返回命中的元素 id 或 null */
   onSelect: (id: string | null) => void;
@@ -27,7 +27,7 @@ function clamp(v: number, min: number, max: number) {
  * 缩放（滚轮）/ 拾取选中（点击）为 2D 专属交互；不随鼠标移动平移画布。
  * GLB 3D 渲染见 Cad3DViewer。命令式生命周期，由 React 组件挂载/销毁。
  */
-export class Cad2DViewer extends RenderingViewer {
+export class CadModelBackend extends RenderingViewer {
   private readonly onSelect: (id: string | null) => void;
   private readonly camera: THREE.OrthographicCamera;
   private readonly raycaster = new THREE.Raycaster();
@@ -81,7 +81,7 @@ export class Cad2DViewer extends RenderingViewer {
     this.updateFrustum();
   };
 
-  constructor({ container, onSelect }: Cad2DViewerOptions) {
+  constructor({ container, onSelect }: CadModelBackendOptions) {
     super(container);
     this.onSelect = onSelect;
 
